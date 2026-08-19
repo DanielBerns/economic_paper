@@ -16,6 +16,19 @@ def main(args_list=None):
         help="Create a default configuration file if missing",
     )
     parser.add_argument(
+        "--checkpoint-dir",
+        help="Directory to save and load model checkpoints",
+    )
+    parser.add_argument(
+        "--output-dir",
+        help="Directory to export tables, figures, CSVs, and reports",
+    )
+    parser.add_argument(
+        "--force-retrain",
+        action="store_true",
+        help="Force retrain models from scratch ignoring existing checkpoints",
+    )
+    parser.add_argument(
         "--init", action="store_true", help="Initialize workspace and configuration"
     )
     parser.add_argument(
@@ -29,6 +42,15 @@ def main(args_list=None):
 
     # Read configuration using standards
     config = read_config(args_list=args_list)
+
+    # Override CLI flags if provided
+    if args.checkpoint_dir:
+        config.app.checkpoint_dir = args.checkpoint_dir
+    if args.output_dir:
+        config.app.output_dir = args.output_dir
+    if args.force_retrain:
+        config.app.force_retrain = True
+
     logger = setup_logger("economic_graph.cli", config.logging)
 
     if args.init:
@@ -67,6 +89,10 @@ def main(args_list=None):
             f"\nPrediction-Observation Divergence Delta(2020): {report.divergence_delta:.2f}"
         )
         print(f"Refalsification Triggered: {report.refalsification_triggered}")
+        print("=" * 80)
+        print("\nGENERATED PUBLICATION OUTPUTS:")
+        for k, v in report.output_paths.items():
+            print(f"  - {k:<15}: {v}")
         print("=" * 80 + "\n")
 
     return 0

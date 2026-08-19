@@ -9,6 +9,11 @@ from pydantic import BaseModel, Field, ValidationError
 class AppSettings(BaseModel):
     name: str = Field(default="Economic Graph Agent Pipeline")
     env: str = Field(default="development")
+    output_dir: str = Field(default="output")
+    checkpoint_dir: str = Field(default="checkpoints")
+    force_retrain: bool = Field(default=False)
+    verbose: bool = Field(default=True)
+    progress_interval_sec: int = Field(default=10)
 
 
 class DataSettings(BaseModel):

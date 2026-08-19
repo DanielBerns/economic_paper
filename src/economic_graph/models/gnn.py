@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List, Tuple
 import numpy as np
 import torch
@@ -60,8 +61,9 @@ class ModelAGraphOnly(BaseModel):
 
                 optimizer.zero_grad()
                 pred_g, pred_d = self.net(x_t, W_t)
+                pred_d_clamped = torch.clamp(pred_d, 1e-6, 1.0 - 1e-6)
 
-                loss = criterion_cont(pred_g, y_g) + criterion_tail(pred_d, y_d)
+                loss = criterion_cont(pred_g, y_g) + criterion_tail(pred_d_clamped, y_d)
                 loss.backward()
                 optimizer.step()
 
@@ -76,6 +78,29 @@ class ModelAGraphOnly(BaseModel):
 
             pred_g, pred_d = self.net(x_t, W_t)
             return pred_g.cpu().numpy(), pred_d.cpu().numpy()
+
+    def save_checkpoint(self, checkpoint_dir: Path) -> Path:
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        path = checkpoint_dir / f"{self.get_safe_filename()}.pt"
+        if self.net is not None:
+            torch.save(self.net.state_dict(), path)
+        return path
+
+    def load_checkpoint(self, checkpoint_dir: Path, in_dim: int = 13) -> bool:
+        path = checkpoint_dir / f"{self.get_safe_filename()}.pt"
+        if not path.exists():
+            return False
+        try:
+            state_dict = torch.load(path)
+            # Infer in_dim from state_dict fc_self.weight shape [hidden_dim, in_dim]
+            saved_in_dim = state_dict["fc_self.weight"].shape[1]
+            self.net = GraphOnlyRGCN(saved_in_dim, self.config.model.hidden_dim)
+            self.net.load_state_dict(state_dict)
+            self.is_fitted = True
+            return True
+        except Exception:
+            return False
+
 
 
 class DynamicGraphAgentNet(nn.Module):
@@ -167,20 +192,22 @@ class ModelBDynamicGraphAgent(BaseModel):
                 next_snap = train_snapshots[t + 1]
 
                 x_np = np.column_stack([snap.target_growth, snap.S])
-                x_t = torch.tensor(x_np, dtype=torch.float32)
+                x_norm = np.clip((x_np - np.mean(x_np, axis=0)) / (np.std(x_np, axis=0) + 1e-5), -5.0, 5.0)
+                x_t = torch.tensor(x_norm, dtype=torch.float32)
                 W_t = torch.tensor(snap.W_share, dtype=torch.float32)
                 z_t = torch.tensor(snap.common_shock, dtype=torch.float32)
                 y_g = torch.tensor(next_snap.target_growth, dtype=torch.float32)
                 y_d = torch.tensor(next_snap.target_tail, dtype=torch.float32)
 
                 optimizer.zero_grad()
-                pred_g, pred_d, h_state = self.net(x_t, W_t, z_t, h_state)
+                pred_g, pred_d, next_h = self.net(x_t, W_t, z_t, h_state)
+                pred_d_clamped = torch.clamp(pred_d, 1e-5, 1.0 - 1e-5)
 
-                loss = criterion_cont(pred_g, y_g) + criterion_tail(pred_d, y_d)
+                loss = criterion_cont(pred_g, y_g) + criterion_tail(pred_d_clamped, y_d)
                 loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.net.parameters(), 1.0)
                 optimizer.step()
-                h_state = h_state.detach()
-
+                h_state = torch.nan_to_num(next_h.detach(), nan=0.0)
         self.is_fitted = True
 
     def predict(self, snapshot: EconomicGraphSnapshot) -> Tuple[np.ndarray, np.ndarray]:
@@ -190,9 +217,32 @@ class ModelBDynamicGraphAgent(BaseModel):
             h_state = torch.zeros(N, self.config.model.hidden_dim, dtype=torch.float32)
 
             x_np = np.column_stack([snapshot.target_growth, snapshot.S])
-            x_t = torch.tensor(x_np, dtype=torch.float32)
+            x_norm = np.clip((x_np - np.mean(x_np, axis=0)) / (np.std(x_np, axis=0) + 1e-5), -5.0, 5.0)
+            x_t = torch.tensor(x_norm, dtype=torch.float32)
             W_t = torch.tensor(snapshot.W_share, dtype=torch.float32)
             z_t = torch.tensor(snapshot.common_shock, dtype=torch.float32)
 
             pred_g, pred_d, _ = self.net(x_t, W_t, z_t, h_state)
             return pred_g.cpu().numpy(), pred_d.cpu().numpy()
+
+    def save_checkpoint(self, checkpoint_dir: Path) -> Path:
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        path = checkpoint_dir / f"{self.get_safe_filename()}.pt"
+        if self.net is not None:
+            torch.save(self.net.state_dict(), path)
+        return path
+
+    def load_checkpoint(self, checkpoint_dir: Path, in_dim: int = 13) -> bool:
+        path = checkpoint_dir / f"{self.get_safe_filename()}.pt"
+        if not path.exists():
+            return False
+        try:
+            state_dict = torch.load(path)
+            saved_in_dim = state_dict["W_q.weight"].shape[1]
+            self.net = DynamicGraphAgentNet(saved_in_dim, self.config.model.hidden_dim)
+            self.net.load_state_dict(state_dict)
+            self.is_fitted = True
+            return True
+        except Exception:
+            return False
+

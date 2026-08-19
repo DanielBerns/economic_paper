@@ -19,9 +19,11 @@ class AblationEngine:
         test_snapshot: EconomicGraphSnapshot,
     ) -> Dict[str, EvaluationMetrics]:
         results: Dict[str, EvaluationMetrics] = {}
+        ablation_cfg = deepcopy(self.config)
+        ablation_cfg.app.force_retrain = True
 
         # 0. Baseline Model B
-        base_model = ModelBDynamicGraphAgent(self.config)
+        base_model = ModelBDynamicGraphAgent(ablation_cfg)
         base_model.fit(train_snapshots)
         pg, pd = base_model.predict(test_snapshot)
         results["Full Graph/Agent Model (Model B)"] = compute_metrics(
@@ -31,7 +33,7 @@ class AblationEngine:
         # Ablation A: No Graph (Zero out W_share)
         train_A = [self._copy_snapshot(s, zero_W=True) for s in train_snapshots]
         test_A = self._copy_snapshot(test_snapshot, zero_W=True)
-        mA = ModelBDynamicGraphAgent(self.config)
+        mA = ModelBDynamicGraphAgent(ablation_cfg)
         mA.fit(train_A)
         pg, pd = mA.predict(test_A)
         results["Ablation A: No Graph"] = compute_metrics(
@@ -41,7 +43,7 @@ class AblationEngine:
         # Ablation B: Unweighted Edges
         train_B = [self._copy_snapshot(s, binary_W=True) for s in train_snapshots]
         test_B = self._copy_snapshot(test_snapshot, binary_W=True)
-        mB = ModelBDynamicGraphAgent(self.config)
+        mB = ModelBDynamicGraphAgent(ablation_cfg)
         mB.fit(train_B)
         pg, pd = mB.predict(test_B)
         results["Ablation B: Unweighted Edges"] = compute_metrics(
@@ -51,7 +53,7 @@ class AblationEngine:
         # Ablation C: Symmetrized Graph
         train_C = [self._copy_snapshot(s, sym_W=True) for s in train_snapshots]
         test_C = self._copy_snapshot(test_snapshot, sym_W=True)
-        mC = ModelBDynamicGraphAgent(self.config)
+        mC = ModelBDynamicGraphAgent(ablation_cfg)
         mC.fit(train_C)
         pg, pd = mC.predict(test_C)
         results["Ablation C: Symmetrized Graph"] = compute_metrics(
@@ -61,7 +63,7 @@ class AblationEngine:
         # Ablation D: No Centralities
         train_D = [self._copy_snapshot(s, no_cent=True) for s in train_snapshots]
         test_D = self._copy_snapshot(test_snapshot, no_cent=True)
-        mD = ModelBDynamicGraphAgent(self.config)
+        mD = ModelBDynamicGraphAgent(ablation_cfg)
         mD.fit(train_D)
         pg, pd = mD.predict(test_D)
         results["Ablation D: No Centralities"] = compute_metrics(

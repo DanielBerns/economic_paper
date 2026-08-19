@@ -3,7 +3,7 @@ name = "economic-graph"
 version = "0.1.0"
 description = "Empirical Pipeline and Out-of-Sample Benchmark for Dynamic Graph-Agent Economic Models"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
     "numpy>=1.26.0",
     "pandas>=2.1.0",
@@ -13,6 +13,7 @@ dependencies = [
     "pyyaml>=6.0.1",
     "scipy>=1.11.0",
     "networkx>=3.2.1",
+    "matplotlib>=3.8.0",
 ]
 
 [project.optional-dependencies]

@@ -9,7 +9,7 @@ Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).
 ```bash
 git clone https://github.com/economic-paper/economic-graph-pipeline.git
 cd economic-paper
-uv sync
+uv sync --extra dev
 ```
 
 ### System Prerequisites
@@ -19,7 +19,7 @@ uv sync
 ## Configuration
 
 The application dynamically reads configuration parameters using the following precedence:
-1. Explicit CLI argument: `--config /path/to/settings.yaml`
+1. Explicit CLI arguments: `--config`, `--checkpoint-dir`, `--output-dir`, `--force-retrain`
 2. Environment variable: `CONFIG_FILE`
 3. Default path: `config/settings.yaml`
 
@@ -38,6 +38,9 @@ uv run python -m economic_graph.cli --config config/settings.yaml --create
 | Key                       | Required | Default                    | Description                                                   |
 |---------------------------|----------|----------------------------|---------------------------------------------------------------|
 | `app.name`                | No       | `Economic Graph Pipeline`  | Application title.                                            |
+| `app.output_dir`          | No       | `output`                   | Directory for tables, figures, CSVs, and JSON reports.        |
+| `app.checkpoint_dir`      | No       | `checkpoints`              | Directory for model weights and state checkpoints.            |
+| `app.force_retrain`       | No       | `false`                    | Force retraining models from scratch, ignoring checkpoints.  |
 | `data.num_countries`      | No       | `80`                       | Number of economies in production network graph.             |
 | `data.num_industries`     | No       | `50`                       | Number of ISIC industries per country ($N \approx 4,000$).     |
 | `data.start_year`         | No       | `1995`                     | Start year of ICIO historical series.                         |
@@ -60,7 +63,7 @@ Initialize workspace directories and verify configuration settings:
 uv run python -m economic_graph.cli --init
 ```
 
-## Execution
+## Execution & Checkpointing
 
 ### Run Full Empirical Pipeline
 
@@ -70,15 +73,29 @@ Execute the full empirical benchmark (loads dataset, trains 8 candidate models, 
 uv run python -m economic_graph.cli --run
 ```
 
-### Options
+### Model Checkpoints & Fast Reruns
 
-```bash
-# Run with custom configuration file
-uv run python -m economic_graph.cli --config config/custom_settings.yaml --run
+The pipeline automatically saves model weights and parameter state dicts to the `checkpoints/` directory.
 
-# Print evaluation report summary
-uv run python -m economic_graph.cli --report
-```
+- **Automatic Checkpoint Loading**: If you rerun the pipeline to update figures or report outputs, the system automatically detects pre-trained model checkpoints in `checkpoints/` and skips training.
+- **Force Retraining**: To force retrain all models from scratch:
+  ```bash
+  uv run python -m economic_graph.cli --run --force-retrain
+  ```
+
+### Generated Output Artifacts
+
+The pipeline automatically generates and exports all publication-ready tables and figures directly into the `output/` directory:
+
+1. **LaTeX Tables & CSVs (`output/tables/`)**:
+   - `table1_main_results.tex` & `table1_main_results.csv`: Table 1 main empirical benchmark results formatted in LaTeX.
+   - `table2_ablations.tex` & `table2_ablations.csv`: Table 2 systemic ablation study results formatted in LaTeX.
+2. **High-Resolution Figures (`output/figures/`)**:
+   - `economic_decision_utility.png` & `economic_decision_utility.pdf`: 300 DPI vector PDF and PNG plots for policy decision utility curves across risk thresholds $c$.
+3. **Node Predictions (`output/predictions/`)**:
+   - `predictions_2020.csv`: Node-by-node ground truth output growth, tail indicators, and model predictions.
+4. **JSON Execution Report (`output/reports/`)**:
+   - `empirical_report.json`: Machine-readable summary of all evaluation metrics, DM p-values, and divergence $\Delta(2020)$.
 
 ## Testing
 
@@ -94,6 +111,12 @@ uv run pytest
 economic_paper/
 ├── .python-version               # Specifies Python 3.12
 ├── pyproject.toml                # Managed by uv (project metadata & dependencies)
+├── checkpoints/                  # Saved model state dicts & weights
+├── output/                       # Publication outputs
+│   ├── tables/                   # LaTeX table snippets (.tex) and CSV files
+│   ├── figures/                  # Publication-ready plots (.png & .pdf)
+│   ├── predictions/              # Node-level model prediction CSVs
+│   └── reports/                  # JSON empirical reports
 ├── config/
 │   ├── settings.example.yaml     # Standard settings template
 │   └── settings.yaml             # Working settings
@@ -121,6 +144,7 @@ economic_paper/
 │           ├── evaluator.py      # RMSE, MAE, Spearman, AUROC, AUPRC, DM test
 │           ├── decision_utility.py # Economic decision cost curves
 │           ├── ablations.py      # 8-component systemic ablation suite
+│           ├── exporters.py      # LaTeX table, CSV, figure, & JSON export engine
 │           └── runner.py         # Master pipeline orchestrator
 └── tests/                        # Unit test suite
     ├── test_config.py

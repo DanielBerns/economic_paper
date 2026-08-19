@@ -35,8 +35,10 @@ def test_economic_decision_utility():
     assert all(isinstance(v, float) for v in util.values())
 
 
-def test_pipeline_runner_small():
+def test_pipeline_runner_small(tmp_path):
     app_config = AppConfig()
+    app_config.app.checkpoint_dir = str(tmp_path / "checkpoints")
+    app_config.app.output_dir = str(tmp_path / "output")
     app_config.data.num_countries = 3
     app_config.data.num_industries = 4
     app_config.data.start_year = 2015
@@ -52,3 +54,5 @@ def test_pipeline_runner_small():
 
     assert "Graph/Agent Model (Model B)" in report.metrics_table
     assert report.divergence_delta >= 0.0
+    assert "table1_csv" in report.output_paths
+    assert "figure_png" in report.output_paths

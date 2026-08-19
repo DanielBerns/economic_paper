@@ -1,6 +1,9 @@
 from dataclasses import dataclass
+from pathlib import Path
+import time
 from typing import Dict, List, Tuple
 import numpy as np
+import pandas as pd
 from economic_graph.config import Config
 from economic_graph.data.loader import EconomicGraphSnapshot, ICIODatasetLoader
 from economic_graph.logging import setup_logger
@@ -18,6 +21,7 @@ from economic_graph.models.input_output import (
 from economic_graph.pipeline.ablations import AblationEngine
 from economic_graph.pipeline.decision_utility import compute_economic_decision_utility
 from economic_graph.pipeline.evaluator import EvaluationMetrics, compute_metrics, diebold_mariano_test
+from economic_graph.pipeline.exporters import PipelineExporter
 
 
 @dataclass
@@ -28,18 +32,28 @@ class PipelineExecutionReport:
     ablation_table: Dict[str, EvaluationMetrics]
     divergence_delta: float
     refalsification_triggered: bool
+    output_paths: Dict[str, str]
 
 
 class PipelineRunner:
-    """Master Pipeline Orchestrator executing data loading, model training, test evaluation, and ablations."""
+    """Master Pipeline Orchestrator executing dataset loading, model training, test evaluation, checkpointing, and exports."""
 
     def __init__(self, config: Config):
         self.config = config
         self.logger = setup_logger("economic_graph.pipeline", config.logging)
         self.loader = ICIODatasetLoader(config)
+        self.checkpoint_dir = Path(config.app.checkpoint_dir)
+        self.output_dir = Path(config.app.output_dir)
+        self.exporter = PipelineExporter(self.output_dir)
 
     def run_pipeline(self) -> PipelineExecutionReport:
+        start_time = time.time()
+        self.logger.info("=" * 80)
         self.logger.info("Initializing OECD ICIO empirical pipeline execution...")
+        self.logger.info(f"Output Directory: {self.output_dir.resolve()}")
+        self.logger.info(f"Checkpoint Directory: {self.checkpoint_dir.resolve()}")
+        self.logger.info("=" * 80)
+
         snapshots = self.loader.generate_synthetic_icio()
 
         train_snaps = [s for s in snapshots if s.year <= self.config.data.train_end_year]
@@ -69,22 +83,47 @@ class PipelineRunner:
         metrics_table: Dict[str, EvaluationMetrics] = {}
         predictions_growth: Dict[str, np.ndarray] = {}
         predictions_tail: Dict[str, np.ndarray] = {}
+        total_models = len(models)
 
-        for model in models:
-            self.logger.info(f"Fitting model: {model.name}...")
-            model.fit(train_snaps)
-
-            pg, pd = model.predict(test_snap)
-            predictions_growth[model.name] = pg
-            predictions_tail[model.name] = pd
-
-            m = compute_metrics(pg, pd, test_snap.target_growth, test_snap.target_tail)
-            metrics_table[model.name] = m
+        for idx, model in enumerate(models, 1):
+            model_start = time.time()
+            elapsed_total = time.time() - start_time
             self.logger.info(
-                f"Model [{model.name}] -> RMSE: {m.rmse:.4f}, MAE: {m.mae:.4f}, Spearman Rho: {m.spearman_rho:.4f}, AUPRC: {m.auprc:.4f}"
+                f"[Progress {idx}/{total_models} ({idx/total_models*100:.1f}%)] "
+                f"Processing model: '{model.name}' | Total elapsed: {elapsed_total:.1f}s"
+            )
+
+            # Check if checkpoint exists and force_retrain is False
+            loaded = False
+            if not self.config.app.force_retrain:
+                try:
+                    loaded = model.load_checkpoint(self.checkpoint_dir)
+                except Exception:
+                    loaded = False
+
+            if loaded:
+                self.logger.info(f"-> Loaded pre-trained checkpoint for '{model.name}'. Skipping training.")
+            else:
+                self.logger.info(f"-> Fitting '{model.name}' on training sample...")
+                model.fit(train_snaps)
+                ckpt_path = model.save_checkpoint(self.checkpoint_dir)
+                self.logger.info(f"-> Saved checkpoint to {ckpt_path}")
+
+            pg, p_tail = model.predict(test_snap)
+            predictions_growth[model.name] = pg
+            predictions_tail[model.name] = p_tail
+
+            m = compute_metrics(pg, p_tail, test_snap.target_growth, test_snap.target_tail)
+            metrics_table[model.name] = m
+
+            dur = time.time() - model_start
+            self.logger.info(
+                f"-> Completed [{model.name}] in {dur:.2f}s | RMSE: {m.rmse:.4f}, MAE: {m.mae:.4f}, "
+                f"Spearman Rho: {m.spearman_rho:.4f}, AUPRC: {m.auprc:.4f}"
             )
 
         # Diebold-Mariano tests against Spatial AR (Best non-graph baseline)
+        self.logger.info("Computing pairwise Diebold-Mariano statistical forecast comparison tests...")
         spatial_ar_err = predictions_growth["Spatial Autoregression"] - test_snap.target_growth
         dm_pvalues: Dict[str, float] = {}
 
@@ -94,9 +133,10 @@ class PipelineRunner:
             dm_pvalues[model_name] = p_val
 
         # Economic Policy Decision Utility
+        self.logger.info("Computing Economic Policy Decision Utility curves across thresholds c...")
         decision_utilities: Dict[str, Dict[float, float]] = {}
-        for model_name, pd in predictions_tail.items():
-            u = compute_economic_decision_utility(pd, test_snap.target_tail)
+        for model_name, p_tail in predictions_tail.items():
+            u = compute_economic_decision_utility(p_tail, test_snap.target_tail)
             decision_utilities[model_name] = u
 
         # Systemic Ablation Suite
@@ -117,6 +157,61 @@ class PipelineRunner:
             f"Refalsification Triggered: {refalsification_triggered}."
         )
 
+        # Export all publication artifacts (Tables, Figures, CSVs, Reports)
+        self.logger.info("Exporting all publication tables, high-resolution figures, and predictions...")
+        t1_csv, t1_tex = self.exporter.export_main_table(metrics_table, dm_pvalues)
+        t2_csv, t2_tex = self.exporter.export_ablation_table(ablation_table)
+        fig_png, fig_pdf = self.exporter.export_figures(decision_utilities)
+
+        # Export predictions CSV
+        pred_df = pd.DataFrame(
+            {
+                "node_id": list(range(len(test_snap.target_growth))),
+                "actual_growth": test_snap.target_growth,
+                "actual_tail": test_snap.target_tail,
+            }
+        )
+        for name, pg in predictions_growth.items():
+            pred_df[f"pred_growth_{name}"] = pg
+            pred_df[f"pred_prob_{name}"] = predictions_tail[name]
+
+        pred_csv = self.exporter.predictions_dir / "predictions_2020.csv"
+        pred_df.to_csv(pred_csv, index=False)
+
+        # Export JSON report
+        report_dict = {
+            "metrics": {
+                k: {
+                    "rmse": v.rmse,
+                    "mae": v.mae,
+                    "spearman_rho": v.spearman_rho,
+                    "auroc": v.auroc,
+                    "auprc": v.auprc,
+                }
+                for k, v in metrics_table.items()
+            },
+            "divergence_delta": divergence_delta,
+            "refalsification_triggered": refalsification_triggered,
+        }
+        json_report = self.exporter.export_report_json(report_dict)
+
+        output_paths = {
+            "table1_csv": str(t1_csv),
+            "table1_tex": str(t1_tex),
+            "table2_csv": str(t2_csv),
+            "table2_tex": str(t2_tex),
+            "figure_png": str(fig_png),
+            "figure_pdf": str(fig_pdf),
+            "predictions_csv": str(pred_csv),
+            "report_json": str(json_report),
+        }
+
+        total_dur = time.time() - start_time
+        self.logger.info("=" * 80)
+        self.logger.info(f"Pipeline execution completed successfully in {total_dur:.1f}s.")
+        self.logger.info(f"All outputs saved to: {self.output_dir.resolve()}")
+        self.logger.info("=" * 80)
+
         return PipelineExecutionReport(
             metrics_table=metrics_table,
             dm_pvalues=dm_pvalues,
@@ -124,4 +219,5 @@ class PipelineRunner:
             ablation_table=ablation_table,
             divergence_delta=divergence_delta,
             refalsification_triggered=refalsification_triggered,
+            output_paths=output_paths,
         )
