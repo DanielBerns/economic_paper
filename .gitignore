@@ -74,9 +74,7 @@ wheels/
 # =========================
 # Output Formats
 # =========================
-# Note: Uncomment the next line if you DO NOT want to track your final PDF.
-# Usually, it is better to track the PDF so collaborators don't have to compile it.
-# *.pdf
+*.pdf
 .dvi
 .ps
 .eps
@@ -101,3 +99,8 @@ _minted-*/
 *.swo
 .DS_Store
 Thumbs.db
+
+# ========================
+# uv
+# ========================
+uv.lock

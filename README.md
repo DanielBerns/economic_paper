@@ -7,8 +7,8 @@ The **Economic Graph Agent Pipeline** is an empirical forecasting and validation
 Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-git clone https://github.com/economic-paper/economic-graph-pipeline.git
-cd economic-paper
+git clone https://github.com/DanielBerns/economic_paper.git
+cd economic_paper
 uv sync --extra dev
 ```
 
@@ -23,16 +23,55 @@ The application dynamically reads configuration parameters using the following p
 2. Environment variable: `CONFIG_FILE`
 3. Default path: `config/settings.yaml`
 
-To create a working configuration file from the template:
+To create a default configuration file automatically using the CLI:
+
+```bash
+uv run python -m economic_graph.cli --create
+```
+
+Or copy the standard template manually:
 
 ```bash
 cp config/settings.example.yaml config/settings.yaml
 ```
 
-Or generate a default file automatically using the CLI:
+### Example `config/settings.yaml`
 
-```bash
-uv run python -m economic_graph.cli --config config/settings.yaml --create
+```yaml
+app:
+  name: "Economic Graph Agent Pipeline"
+  env: "development"
+  output_dir: "output"
+  checkpoint_dir: "checkpoints"
+  force_retrain: false
+  verbose: true
+  progress_interval_sec: 10
+
+data:
+  num_countries: 80
+  num_industries: 50
+  start_year: 1995
+  end_year: 2022
+  train_end_year: 2017
+  val_end_year: 2019
+  test_year: 2020
+  raw_monetary_scaling: 1000.0
+  edge_threshold: 1.0
+
+model:
+  hidden_dim: 64
+  num_layers: 2
+  learning_rate: 0.005
+  epochs: 50
+  batch_size: 1
+  tail_quantile: 0.10
+  seed: 42
+
+logging:
+  level: "INFO"
+  log_file: "logs/economic_graph.log"
+  max_bytes: 10485760
+  backup_count: 5
 ```
 
 | Key                       | Required | Default                    | Description                                                   |
