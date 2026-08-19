@@ -1,0 +1,103 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Latex
+# =========================
+# Core LaTeX/Auxiliary Files
+# =========================
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+.*.lb
+
+# =========================
+# Bibliography/BibTeX Files
+# =========================
+*.bbl
+*.bcf
+*.blg
+*-blx.aux
+*-blx.bib
+*.run.xml
+
+# =========================
+# Glossaries / Index Files
+# =========================
+*.acn
+*.acr
+*.alg
+*.glg
+*.glo
+*.gls
+*.ist
+*.idx
+*.ilg
+*.ind
+
+# =========================
+# Beamer (Presentations)
+# =========================
+*.nav
+*.snm
+*.vrb
+
+# =========================
+# Latexmk Specific Files
+# =========================
+*.fdb_latexmk
+*.ilg
+*.idx
+
+# =========================
+# SyncTeX Files
+# =========================
+*.synctex(busy)
+*.synctex.gz
+*.synctex.gz(busy)
+
+# =========================
+# Output Formats
+# =========================
+# Note: Uncomment the next line if you DO NOT want to track your final PDF.
+# Usually, it is better to track the PDF so collaborators don't have to compile it.
+# *.pdf
+.dvi
+.ps
+.eps
+
+# =========================
+# Specific Package Outputs
+# =========================
+# Minted (Code highlighting) - Creates heavy cache folders
+_minted-*/
+# Pythontex
+*.pytxcode
+# TIKZ externalize
+*.tikz
+*.dpth
+
+# =========================
+# Editor / OS Backup Files
+# =========================
+*~
+*.bak
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

@@ -1,0 +1,1433 @@
+FULL EMPIRICAL PIPELINE From OECD Inter-Country Input-Output Data to
+Statistical Comparison
+
+Purpose
+
+This document specifies a complete, falsifiable empirical pipeline for
+testing the proposed dynamic graph/agent economic model against
+conventional econometric, input-output, and network baselines.
+
+The central objective is not to show that an economy can be represented
+as a graph. That is already well established. The objective is to test
+whether the proposed combination of dynamic network structure,
+heterogeneous agents, asymmetric flows, network position, and temporal
+state produces better out-of-sample predictions of an actual economic
+phenomenon than simpler established models.
+
+The primary empirical question is:
+
+    Does a dynamic country-industry production graph contain information about the cross-sectional propagation of economic shocks, and does the proposed graph/agent model extract that information better out of sample than conventional econometric and network baselines?
+
+The first empirical system should use the OECD Inter-Country
+Input-Output (ICIO) database. The proposed framework describes the
+economy as a time-indexed directed, weighted interaction graph and
+defines macroeconomic observables as functions of graph states and
+flows. The empirical implementation below deliberately starts with a
+graph projection rather than attempting to estimate every component of
+the full hypergraph/POMDP/MARL architecture simultaneously.
+
+SOURCE BASIS FROM THE PROPOSED FRAMEWORK
+
+The source document defines:
+
+1.  Agents as autonomous entities with state attributes, capabilities,
+    and decision strategies.
+2.  The economy as a time-indexed, multi-relational directed hypergraph.
+3.  Transactions as directed material/economic interactions.
+4.  A distinction between the observed graph G_hat(t), the latent graph
+    G_latent(t), the shadow graph, and a true graph G*(t).
+5.  Agent decision-making as POMDPs with partial observability.
+6.  Wealth and economic position as partly emergent from graph topology
+    and flows.
+7.  Degree, betweenness, and eigenvector centrality as structural
+    variables.
+8.  Graph diffusion and nonlinear flow dynamics.
+9.  Macroeconomic observables as mathematical functions of graph states.
+10. Model validation through prediction-observation divergence.
+
+The source explicitly proposes empirical graph reconstruction through
+network tomography, entity resolution, and related techniques, and
+defines prediction-observation divergence as:
+
+    Delta(t) = ||Y_predicted(t) - Y_measured(t)||.
+
+This empirical pipeline operationalizes those ideas while restricting
+the first test to components that can be estimated from observed
+economic data.
+
+1. EMPIRICAL OBJECT AND UNIT OF ANALYSIS
+
+The first real economic network will be a global country-industry
+production network.
+
+Define a node as:
+
+    i = (c, s)
+
+where: c = country s = industry/sector
+
+A node therefore represents one industry in one country.
+
+Examples include: United States - Motor vehicles Germany - Chemicals
+Japan - Electronics China - Basic metals
+
+The node set at time t is:
+
+    V_t = {(c,s)}
+
+The network at time t is:
+
+    G_t = (V, E_t, W_t)
+
+where: V = country-industry nodes E_t = directed production
+relationships W_t = edge weights
+
+A directed edge:
+
+    i = (c,s) -> j = (c',s')
+
+means that industry s in country c supplies an intermediate input to
+industry s’ in country c’.
+
+The edge weight is the monetary value of that intermediate input.
+
+This construction gives a direct empirical representation of the
+proposed transaction graph. It is intentionally simpler than a full
+hypergraph because it allows the first test to be implemented and
+falsified with publicly structured input-output data.
+
+2. DATA SOURCE: OECD ICIO
+
+Primary data source:
+
+    OECD Inter-Country Input-Output (ICIO) Tables
+
+The current ICIO framework provides country-industry production
+relationships and international intermediate-input flows over a long
+historical period. The current release covers approximately 80
+economies, 50 industries, and annual observations beginning in the
+mid-1990s and extending through 2022, with more recent projections
+available in related OECD datasets.
+
+The exact release used in the replication should be frozen at the start
+of the project and recorded in the experiment manifest.
+
+The data extraction should preserve at least:
+
+    - intermediate input flows
+    - final demand
+    - gross output
+    - value added
+    - imports
+    - exports
+    - country identifiers
+    - industry identifiers
+    - year
+    - price/valuation information where available
+
+Additional variables may be joined if their historical coverage and
+definitions are compatible.
+
+Important principle:
+
+    Do not mix revisions of the ICIO database silently.
+
+A reproducible experiment should record: - dataset release/version -
+download date - source URL - file checksum - transformations - dropped
+countries/industries - missing-value treatment - price conversion method
+
+3. DATA PROCESSING AND HARMONIZATION
+
+The raw ICIO data should be converted into a single harmonized
+country-industry panel.
+
+3.1 Identifier harmonization
+
+Create stable identifiers:
+
+    country_id
+    industry_id
+    node_id = country_id + industry_id
+
+Maintain a mapping table between: - OECD country codes - source country
+labels - internal country IDs - industry classifications - internal
+industry IDs
+
+Do not rely on string labels as permanent identifiers.
+
+3.2 Industry consistency
+
+The industry classification must remain consistent over the full
+training and test period.
+
+If a classification change occurs: - construct a concordance where
+possible; - aggregate industries to a common level if necessary; -
+document all aggregation decisions.
+
+Do not use future information to construct a historical classification.
+
+3.3 Country consistency
+
+Handle: - country splits - country mergers - historical reporting
+changes - rest-of-world aggregates
+
+A conservative first experiment may exclude entities whose historical
+identity cannot be made consistent, but exclusions must be documented.
+
+3.4 Price and unit harmonization
+
+Nominal monetary flows should not be interpreted as real output changes
+without adjustment.
+
+Construct, where possible: - current-price flow measures -
+constant-price output/value-added measures - deflated growth rates
+
+Keep monetary network weights and real prediction targets conceptually
+separate.
+
+3.5 Missing values
+
+Distinguish: - structural zero - missing observation - unavailable
+observation - suppressed/aggregated observation
+
+Never automatically convert missing values to zero.
+
+Create a missingness report by: country industry year variable
+
+4. CONSTRUCT THE CORE ECONOMIC MATRICES
+
+For each year t, construct the intermediate-flow matrix:
+
+    Z_t
+
+where:
+
+    Z_ij,t = monetary intermediate flow from node i to node j.
+
+Also construct:
+
+    Y_t = final-demand matrix/vector
+    VA_t = value-added vector
+    X_t = gross-output vector
+
+depending on the exact ICIO representation.
+
+The basic input coefficient matrix is:
+
+    A_t = Z_t * diag(X_t)^(-1)
+
+with the appropriate orientation for the chosen input-output convention.
+
+Each column/row convention must be fixed once and documented.
+
+The standard Leontief production system is:
+
+    X_t = (I - A_t)^(-1) F_t
+
+where F_t represents final demand.
+
+This will later become one of the strongest network/input-output
+baselines.
+
+5. BUILD THE DYNAMIC PRODUCTION GRAPH
+
+For each year t:
+
+    G_t = (V, E_t, W_t)
+
+with:
+
+    W_t[i,j] = Z_ij,t
+
+Only retain economically meaningful edges according to a pre-specified
+rule.
+
+Possible rules:
+
+A. Full graph: retain all reported flows.
+
+B. Threshold graph: retain edges above a small pre-specified share/value
+threshold.
+
+C. Top-k graph: retain the k largest supplier relationships per
+recipient.
+
+The primary experiment should use the full graph where computationally
+feasible, because thresholding can create artificial topology.
+
+Sensitivity analysis can then repeat the experiment using alternative
+sparsification rules.
+
+6. TWO EDGE REPRESENTATIONS
+
+The network should be represented in at least two forms.
+
+6.1 Raw-value network
+
+    W_raw[i,j,t] = Z_ij,t
+
+This represents actual monetary throughput.
+
+6.2 Input-share network
+
+Normalize each recipient’s inputs:
+
+    W_share[i,j,t] = Z_ij,t / total_intermediate_inputs[j,t]
+
+This measures dependence rather than absolute economic scale.
+
+The main prediction experiment should report whether results are robust
+to the choice.
+
+7. NODE STATE VECTOR
+
+For each country-industry node i and year t define:
+
+    S_i,t = [
+        output,
+        value_added,
+        labor,
+        capital_proxy,
+        exports,
+        imports,
+        final_demand_exposure,
+        in_degree,
+        out_degree,
+        in_strength,
+        out_strength,
+        betweenness,
+        eigenvector_centrality,
+        network_concentration,
+        other_controls
+    ]
+
+Not every variable will necessarily be available at the same
+granularity. The final specification must therefore distinguish:
+
+    observed variables
+    constructed variables
+    proxy variables
+    latent variables
+
+The model should never treat a proxy as a direct observation without
+labeling it.
+
+8. NETWORK POSITION VARIABLES
+
+Compute at minimum:
+
+8.1 In-degree
+
+Number of supplier relationships entering a node.
+
+8.2 Out-degree
+
+Number of customer relationships leaving a node.
+
+8.3 In-strength
+
+    s_i^in = sum_j W_ji
+
+8.4 Out-strength
+
+    s_i^out = sum_j W_ij
+
+8.5 Betweenness centrality
+
+Measure the degree to which a node lies on economically important paths
+through the production network.
+
+8.6 Eigenvector centrality
+
+Measure exposure to other highly connected/influential nodes.
+
+8.7 Concentration
+
+Compute supplier and customer concentration, for example using a
+Herfindahl-style measure:
+
+    H_i = sum_j share_ij^2
+
+These variables provide interpretable network features and form a simple
+centrality-regression baseline.
+
+9. GLOBAL AND EXOGENOUS VARIABLES
+
+Construct a common variable vector:
+
+    z_t
+
+Potential variables include:
+
+    - world output growth
+    - global commodity prices
+    - exchange rates
+    - broad financial conditions
+    - major policy indicators
+    - global demand measures
+    - other variables available at the forecasting date
+
+The exact set must be frozen before final testing.
+
+Important distinction:
+
+Variables that become known only after the prediction target occurs must
+not be included.
+
+For the 2020 experiment, the model may use information that was
+genuinely available at the chosen forecasting date, but it must not use
+realized 2020 outcomes as predictors.
+
+10. DEFINE THE PREDICTION TARGETS
+
+The primary continuous target is one-year-ahead real output growth:
+
+    g_i,t+1 = log(Y_i,t+1) - log(Y_i,t)
+
+where Y should be an appropriately deflated output measure.
+
+The primary prediction is:
+
+    g_hat_i,t+1 = f_theta(G_t, S_t, z_t)_i
+
+A second target captures severe contractions.
+
+Define:
+
+    D_i,t+1 = 1[g_i,t+1 < q_10]
+
+where q_10 is the tenth percentile of the node-level growth distribution
+estimated from the training data only.
+
+This produces a binary severe-contraction event.
+
+Do not calculate the threshold using the complete dataset, because doing
+so would leak test-period information into model construction.
+
+11. WHY THE COVID-19 PERIOD IS A USEFUL TEST
+
+The 2020 pandemic is not useful because a model could have been expected
+to predict the existence of the pandemic.
+
+The stronger experiment is conditional shock propagation.
+
+The common shock information is made available equally to all models.
+
+The models must answer:
+
+    Given the production network observed before the shock,
+    which country-industries should suffer the largest output contractions?
+
+Thus the empirical target is cross-sectional shock allocation rather
+than prediction of the existence of the aggregate event itself.
+
+The preferred primary design is:
+
+    Training: 1995-2017
+    Validation: 2018-2019
+    Held-out test: 2020
+    Post-test robustness: 2021-2022
+
+All hyperparameters are selected using the training and validation
+periods only.
+
+The 2020 data are not used during model development.
+
+12. TEMPORAL TRAINING DESIGN
+
+The experiment must use time-respecting splits.
+
+Never randomly split country-industry-year observations into train and
+test sets.
+
+Random splitting would allow the model to learn information from future
+years and would produce an overly optimistic estimate of forecasting
+performance.
+
+Primary split:
+
+    Train      1995-2017
+    Validate   2018-2019
+    Test       2020
+    Robustness 2021-2022
+
+Secondary robustness designs:
+
+    Rolling-origin evaluation
+    Expanding-window evaluation
+    Alternative crisis/non-crisis periods
+    Leave-one-period-out stress tests
+
+13. PROPOSED GRAPH-ONLY MODEL
+
+The first learned network model is:
+
+    y_hat_t+1 = f_theta(G_t, X_t)
+
+where the graph supplies: - node features - edge weights - topology -
+temporal state
+
+A generic message-passing formulation is:
+
+    m_i,t =
+        AGG_j [
+            phi_theta(
+                h_i,t,
+                h_j,t,
+                w_ji,t
+            )
+        ]
+
+and:
+
+    h_i,t+1 =
+        F_theta(h_i,t, m_i,t, z_t)
+
+The final prediction is:
+
+    g_hat_i,t+1 = r_theta(h_i,t+1)
+
+This is the graph-only model.
+
+14. PROPOSED GRAPH/AGENT MODEL
+
+The graph/agent model adds heterogeneous agent state and policy
+information.
+
+Represent each agent as:
+
+    Agent_i(t) = <S_i(t), C_i(t), pi_i>
+
+where: S_i(t) = state C_i(t) = capabilities/actions pi_i = decision
+policy
+
+The source framework describes agent decision-making using POMDPs and
+partial observability. For empirical implementation, this should be
+operationalized cautiously.
+
+A practical version can include:
+
+    - node-specific latent state
+    - uncertainty/belief representation
+    - heterogeneous response parameters
+    - learned temporal memory
+    - network-mediated interactions
+
+The model can be represented abstractly as:
+
+    h_i,t+1 =
+        F_theta(
+            h_i,t,
+            messages_i,t,
+            belief_i,t,
+            policy_i
+        )
+
+and:
+
+    g_hat_i,t+1 = r_theta(h_i,t+1)
+
+The additional complexity must be justified by predictive improvement.
+
+15. DO NOT CLAIM THAT A GENERIC GNN TESTS THE THEORY
+
+A central methodological warning is necessary.
+
+A generic graph neural network could outperform a regression because it
+is a more flexible statistical function approximator.
+
+That alone would not validate the economic theory.
+
+The empirical model must therefore expose the theoretically relevant
+components:
+
+    - directed flows
+    - weighted flows
+    - temporal graph structure
+    - heterogeneous node states
+    - network position
+    - asymmetric propagation
+    - optional partial observability
+    - nonlinear interactions
+
+Ablation tests must determine which components actually produce the
+performance improvement.
+
+16. CONVENTIONAL ECONOMETRIC BASELINE 1: PANEL AUTOREGRESSION
+
+Estimate:
+
+    g_i,t+1 =
+        alpha_i
+        + delta_t
+        + rho g_i,t
+        + beta'X_i,t
+        + epsilon_i,t+1
+
+where:
+
+    alpha_i = node fixed effect
+    delta_t = time fixed effect
+    X_i,t = observed economic controls
+
+This is a serious conventional benchmark.
+
+It captures: - persistence - node heterogeneity - common year effects -
+observed covariates
+
+The graph model must improve upon this baseline to demonstrate that
+network information matters.
+
+17. ECONOMETRIC BASELINE 2: DYNAMIC FACTOR MODEL
+
+Construct a low-dimensional factor representation:
+
+    X_t approximately = Lambda F_t + epsilon_t
+
+where:
+
+    F_t = latent common factors
+    Lambda = node-specific factor loadings
+
+Forecast node-level growth from: - its historical growth - estimated
+factors - factor exposure
+
+This baseline allows broad cross-sectional dependence without explicitly
+encoding the production graph.
+
+If the graph model cannot beat the factor model, the additional topology
+may not provide useful predictive information.
+
+18. ECONOMETRIC BASELINE 3: PANEL VAR / VAR
+
+Where dimensionality permits, estimate a panel VAR or lower-dimensional
+VAR.
+
+The purpose is not to force the full country-industry system into a huge
+unrestricted VAR.
+
+Instead, use economically meaningful aggregates or reduced
+representations.
+
+The benchmark tests whether ordinary dynamic interdependence can explain
+the same predictive signal.
+
+19. NETWORK BASELINE 1: LEONTIEF INPUT-OUTPUT MODEL
+
+The standard production-network benchmark is:
+
+    X_t = (I - A_t)^(-1) F_t
+
+This model uses the same underlying production network as the graph
+model.
+
+Its importance is methodological:
+
+If the proposed graph/agent model does not beat a conventional Leontief
+network model, then claims of superior network-based prediction are
+weak.
+
+The comparison should be made under matched information sets wherever
+possible.
+
+20. NETWORK BASELINE 2: CENTRALITY REGRESSION
+
+Estimate:
+
+    g_i,t+1 =
+        alpha_i
+        + delta_t
+        + beta1 degree_i,t
+        + beta2 strength_i,t
+        + beta3 betweenness_i,t
+        + beta4 eigenvector_i,t
+        + gamma'X_i,t
+        + epsilon_i,t+1
+
+This asks whether the theory’s proposed network effects are already
+captured by simple summary statistics.
+
+If centrality regression performs as well as the graph model, a full
+graph representation may not be necessary.
+
+21. NETWORK BASELINE 3: NETWORK AUTOREGRESSION
+
+Estimate a model of the form:
+
+    g_t+1 =
+        alpha
+        + rho g_t
+        + lambda W_t g_t
+        + beta X_t
+        + epsilon_t+1
+
+This captures network spillovers without requiring nonlinear graph
+message passing.
+
+It is an important intermediate benchmark between econometric models and
+machine-learning graph models.
+
+22. MODEL HYPERPARAMETER SELECTION
+
+Hyperparameters must be selected using training/validation data only.
+
+Examples:
+
+    - learning rate
+    - hidden dimension
+    - number of message-passing layers
+    - dropout
+    - regularization
+    - temporal window length
+    - edge threshold, if thresholding is used
+    - latent-state dimension
+    - early stopping rule
+
+The 2020 test set must never be used to select these parameters.
+
+For neural models, use: - fixed random seeds for reproducibility -
+multiple random seeds for uncertainty - early stopping on validation
+performance - saved model checkpoints - deterministic preprocessing
+
+23. TARGET NORMALIZATION
+
+If the machine-learning model requires normalization:
+
+    x_scaled = (x - mean_train) / std_train
+
+where mean_train and std_train are computed from training data only.
+
+Do not compute normalization statistics over the entire dataset.
+
+This is another potential source of information leakage.
+
+24. MISSING DATA AND IMPUTATION
+
+Imputation must be performed inside the temporal training framework.
+
+For example:
+
+    training-period missingness
+        -> estimate imputation rule using training data
+        -> apply rule to validation
+        -> apply unchanged rule to test
+
+Do not use 2020 values to improve historical imputation.
+
+Sensitivity analysis should compare: - complete-case analysis - simple
+imputation - model-based imputation - missingness indicators
+
+25. PREDICTION ON THE HELD-OUT 2020 PERIOD
+
+At the beginning of the test:
+
+    G_2019
+    S_2019
+    z_2020
+
+are available according to the defined forecasting information set.
+
+The model generates:
+
+    g_hat_i,2020
+
+and:
+
+    P_hat(D_i,2020 = 1)
+
+No realized 2020 node-level outcomes are used.
+
+The actual outcomes are then revealed:
+
+    g_i,2020
+    D_i,2020
+
+The forecast is compared against those observations.
+
+26. CONTINUOUS FORECASTING METRICS
+
+26.1 Root Mean Squared Error
+
+    RMSE =
+        sqrt[
+            (1/N) sum_i (g_hat_i - g_i)^2
+        ]
+
+RMSE penalizes large errors strongly.
+
+26.2 Mean Absolute Error
+
+    MAE =
+        (1/N) sum_i |g_hat_i - g_i|
+
+MAE is less sensitive to extreme errors.
+
+27. RANKING METRICS
+
+The model may be useful even if exact growth predictions are imperfect.
+
+Therefore calculate:
+
+    Spearman rank correlation
+
+between: predicted contraction severity realized contraction severity
+
+A high value means the model successfully identifies which nodes are
+relatively more exposed.
+
+This is particularly relevant for systemic-risk applications.
+
+28. TAIL-RISK CLASSIFICATION
+
+Define:
+
+    D_i,t+1 =
+        1 if g_i,t+1 is below the training-sample tenth percentile
+        0 otherwise
+
+The model predicts:
+
+    P_i = P(D_i,t+1 = 1 | information_t)
+
+Evaluate:
+
+    AUROC
+    AUPRC
+
+AUPRC is particularly useful when severe contractions are relatively
+rare.
+
+Also report:
+
+    precision among top 10% predicted risk
+    recall among actual bottom 10%
+
+29. CALIBRATION
+
+A model that predicts probabilities should be calibrated.
+
+For example, among nodes assigned approximately:
+
+    10% predicted probability
+
+roughly 10% should experience the event, subject to sampling
+uncertainty.
+
+Report:
+
+    Brier score
+    reliability/calibration plot
+    calibration slope
+    calibration intercept
+
+Calibration is more informative for decision support than AUROC alone.
+
+30. ECONOMIC DECISION VALUE
+
+Translate predictions into a simple decision rule.
+
+For example:
+
+    intervene_i = 1
+        if P_i > c
+
+where c is a policy threshold.
+
+Assign costs to: - false positives - false negatives - correct
+identification
+
+Then calculate expected cost or utility.
+
+Repeat over a range of cost assumptions.
+
+This asks whether the predictive improvement has practical economic
+value rather than merely statistical significance.
+
+31. STATISTICAL COMPARISON BETWEEN MODELS
+
+Do not simply compare point estimates of RMSE.
+
+Because all models predict the same observations, their errors are
+paired.
+
+Use appropriate paired forecast-comparison methods.
+
+Potential methods include:
+
+    - Diebold-Mariano tests
+    - paired bootstrap confidence intervals
+    - block bootstrap for temporal dependence
+    - clustered bootstrap where appropriate
+
+The exact test must match the forecasting design and dependence
+structure.
+
+The null hypothesis for a forecast-loss comparison can be expressed as:
+
+    H0:
+        E[L_A - L_B] = 0
+
+against:
+
+    H1:
+        E[L_A - L_B] != 0
+
+where L is a chosen forecast loss.
+
+32. MULTIPLE COMPARISONS
+
+If many models and many metrics are compared, some apparent winners will
+occur by chance.
+
+Report:
+
+    - confidence intervals
+    - adjusted p-values where appropriate
+    - pre-specified primary metric
+    - pre-specified primary comparison
+
+Do not select the most favorable metric after observing the results.
+
+A sensible primary endpoint is:
+
+    out-of-sample RMSE for node-level 2020 real output growth
+
+with:
+
+    AUPRC
+    Spearman correlation
+    calibration
+
+as important secondary endpoints.
+
+33. ABLATION TESTS
+
+The proposed model should be systematically simplified.
+
+Ablation A: Remove graph information.
+
+Ablation B: Remove edge weights.
+
+Ablation C: Remove edge direction by symmetrizing the network.
+
+Ablation D: Remove network centrality/state features.
+
+Ablation E: Remove agent heterogeneity.
+
+Ablation F: Remove temporal memory.
+
+Ablation G: Replace nonlinear propagation with linear diffusion.
+
+Ablation H: Remove partial-observability/belief-state components.
+
+Each ablation asks:
+
+    Does this theoretically motivated component improve
+    out-of-sample prediction?
+
+34. THEORETICAL MECHANISMS TO TEST
+
+The proposed framework makes several empirical claims that should be
+separated.
+
+34.1 Network concentration
+
+Prediction:
+
+    More concentrated supplier/customer networks
+    should produce different shock sensitivity.
+
+Test: regress or model future contraction against pre-shock
+concentration.
+
+34.2 Centrality
+
+Prediction:
+
+    Highly central nodes may transmit or absorb shocks differently.
+
+Test: compare predicted and realized effects conditional on centrality.
+
+34.3 Asymmetric propagation
+
+Prediction:
+
+    Shock propagation is not adequately described by symmetric diffusion.
+
+Test: compare directed graph performance with symmetrized graph
+performance.
+
+34.4 Nonlinear propagation
+
+Prediction:
+
+    Network effects may be nonlinear and may intensify near thresholds.
+
+Test: compare nonlinear graph model with linear network autoregression.
+
+34.5 Heterogeneous agents
+
+Prediction:
+
+    Nodes with different states/exposures should respond differently even when they occupy similar topological positions.
+
+Test: compare shared-policy and heterogeneous-policy models.
+
+35. ROBUSTNESS TO NETWORK REPRESENTATION
+
+Repeat the experiment using:
+
+    - raw monetary weights
+    - normalized input shares
+    - alternative sparsification thresholds
+    - full graph
+    - aggregated industry graph
+    - country-only graph
+    - industry-only graph
+
+If the result disappears under a reasonable representation change, the
+claimed effect is fragile.
+
+36. ROBUSTNESS TO TARGET DEFINITION
+
+Repeat using:
+
+    - gross output growth
+    - value-added growth
+    - export growth
+    - import disruption
+    - severe contraction
+    - bottom-10% event
+    - bottom-5% event
+
+This determines whether the model predicts a broad economic phenomenon
+or merely one particular constructed target.
+
+37. ROBUSTNESS TO TEMPORAL SPLIT
+
+The main 2020 test should not be the only evidence.
+
+Use:
+
+    rolling-origin forecasts
+    expanding-window forecasts
+    alternative crisis periods
+    non-crisis periods
+
+The important question is whether graph information helps consistently
+rather than only during one exceptional episode.
+
+38. DATA QUALITY AND SENSITIVITY
+
+Perform sensitivity analysis for:
+
+    - missing data
+    - country exclusions
+    - industry aggregation
+    - deflator choices
+    - edge thresholds
+    - treatment of Rest of World
+    - lag length
+    - normalization
+    - random seed
+
+The results should be presented as a sensitivity table rather than
+hidden in implementation notes.
+
+39. INTERPRETABILITY
+
+The graph model should expose economically interpretable diagnostics.
+
+Possible outputs:
+
+    - node-level predicted risk
+    - edge-level contribution estimates
+    - attention/message weights if the architecture provides them
+    - centrality effects
+    - counterfactual edge removal
+    - counterfactual shock propagation
+    - feature importance
+    - sensitivity to network position
+
+A useful counterfactual is:
+
+    What happens to predicted output if the strongest supplier
+    relationship of node i is removed or disrupted?
+
+Another is:
+
+    What happens if a high-centrality upstream node experiences
+    a large negative shock?
+
+These are not substitutes for causal identification, but they can reveal
+whether the model behaves consistently with its claimed mechanism.
+
+40. CAUSAL INTERPRETATION WARNING
+
+Predictive success does not establish causal truth.
+
+If:
+
+    Graph/Agent RMSE < Econometric RMSE
+
+that establishes predictive superiority under the tested information
+set.
+
+It does not prove:
+
+    network topology causes the observed outcome.
+
+To make causal claims, a separate identification strategy is required.
+
+Possible future designs could use: - plausibly exogenous supply
+disruptions - natural experiments - trade-policy shocks - transport
+disruptions - disasters - externally determined commodity shocks
+
+The first project should remain explicitly predictive.
+
+41. REPRODUCIBILITY REQUIREMENTS
+
+The complete experiment should be executable from a clean environment.
+
+Store:
+
+    data/
+    raw/
+    processed/
+    graph/
+    models/
+    predictions/
+    evaluation/
+    figures/
+    tables/
+    configuration/
+    logs/
+
+Record:
+
+    dataset version
+    software versions
+    package versions
+    operating environment
+    random seeds
+    model hyperparameters
+    preprocessing parameters
+    train/validation/test dates
+
+Every final result should be traceable to:
+
+    raw data
+        -> transformation
+        -> graph
+        -> model
+        -> prediction
+        -> evaluation
+
+42. PRE-REGISTRATION OF THE PRIMARY TEST
+
+Before running the final test, freeze:
+
+    primary target
+    primary test period
+    primary loss
+    primary model
+    primary baselines
+    train/validation/test split
+    preprocessing rules
+    hyperparameter-selection procedure
+
+This prevents post-hoc model selection.
+
+A practical pre-specified primary comparison is:
+
+    Graph/Agent model
+        versus
+    best conventional/network baseline
+
+on:
+
+    2020 node-level real output growth
+
+using:
+
+    RMSE
+
+with secondary evaluation using:
+
+    MAE
+    Spearman rank correlation
+    AUPRC
+    calibration
+    economic decision value
+
+43. EXPECTED RESULTS AND INTERPRETATION
+
+There are several scientifically meaningful outcomes.
+
+Outcome A: Graph/Agent > all baselines
+
+Interpretation: Strong evidence that the proposed representation
+contains useful predictive information beyond the tested conventional
+and network models.
+
+Outcome B: Graph-only > conventional models Graph/Agent approximately
+Graph-only
+
+Interpretation: Network structure appears predictive, but the additional
+agent machinery is not empirically necessary for this task.
+
+Outcome C: Leontief/network baseline >= Graph/Agent
+
+Interpretation: The proposed complexity does not improve prediction for
+this phenomenon. Claims about the extra machinery should be weakened.
+
+Outcome D: Centrality regression performs approximately as well as
+Graph/Agent
+
+Interpretation: The predictive information may be summarized by simple
+network statistics rather than requiring a learned dynamic graph.
+
+Outcome E: Graph/Agent wins only in 2020 but not in rolling or
+non-crisis tests
+
+Interpretation: The model may be useful specifically for crisis
+propagation, but broad claims about general economic forecasting would
+not be justified.
+
+Outcome F: No network model improves on conventional econometric models
+
+Interpretation: The production graph, at the available resolution, may
+not contain incremental predictive information beyond conventional
+variables.
+
+44. THE DECISIVE EMPIRICAL TABLE
+
+The final paper should contain a table with approximately this
+structure:
+
+    Model                     RMSE    MAE    Spearman   AUROC   AUPRC
+    -------------------------------------------------------------------
+    Panel AR / fixed effects   ...     ...      ...       ...     ...
+    Dynamic factor             ...     ...      ...       ...     ...
+    Panel VAR                  ...     ...      ...       ...     ...
+    Leontief IO                ...     ...      ...       ...     ...
+    Centrality regression      ...     ...      ...       ...     ...
+    Network autoregression     ...     ...      ...       ...     ...
+    Graph-only model           ...     ...      ...       ...     ...
+    Graph/Agent model          ...     ...      ...       ...     ...
+
+Add:
+
+    Top-10% precision
+    Top-10% recall
+    Brier score
+    confidence intervals
+    forecast-comparison p-values
+
+The table must distinguish:
+
+    test performance
+    validation performance
+
+and must not include any metric used for tuning the test model.
+
+45. THE MINIMUM VIABLE EMPIRICAL PROJECT
+
+If the full architecture proves too large for the first implementation,
+reduce the scope rather than weakening the test.
+
+Minimum viable project:
+
+    1. OECD ICIO
+    2. Country-industry nodes
+    3. Directed weighted intermediate-flow graph
+    4. 1-year-ahead real output growth
+    5. Training 1995-2017
+    6. Validation 2018-2019
+    7. Test 2020
+    8. Panel AR baseline
+    9. Leontief baseline
+    10. Centrality regression
+    11. Network autoregression
+    12. Graph-only model
+    13. Graph/Agent model
+    14. RMSE
+    15. MAE
+    16. Spearman correlation
+    17. AUPRC
+    18. Calibration
+    19. Ablations
+    20. Statistical forecast comparison
+
+This is already enough to answer the fundamental question.
+
+46. WHAT THIS EXPERIMENT WOULD ACTUALLY ESTABLISH
+
+A successful result would not establish the entire theoretical
+framework.
+
+It would establish a narrower and much more defensible proposition:
+
+    A dynamic representation of the international production
+    network provides incremental information for predicting
+    the cross-sectional propagation of economic shocks, and
+    the proposed graph/agent architecture extracts that
+    information more effectively than the specified alternatives.
+
+That is an empirical contribution.
+
+It can subsequently motivate tests of:
+
+    - wealth distribution dynamics
+    - financial networks
+    - labor-market networks
+    - tax/shadow-economy networks
+    - policy counterfactuals
+    - multi-agent learning
+    - latent/shadow graph reconstruction
+
+Those should be treated as separate empirical projects.
+
+47. FINAL PIPELINE
+
+The complete pipeline is:
+
+    OECD ICIO raw data
+            |
+            v
+    Versioning + provenance
+            |
+            v
+    Cleaning + identifier harmonization
+            |
+            v
+    Price/unit harmonization
+            |
+            v
+    Missingness treatment
+            |
+            v
+    Core matrices Z, A, F, VA, X
+            |
+            v
+    Country-industry node construction
+            |
+            v
+    Directed weighted graph G_t
+            |
+            v
+    Node state vectors S_i,t
+            |
+            v
+    Network features and centralities
+            |
+            v
+    Common/exogenous variables z_t
+            |
+            v
+    Prediction targets g_i,t+1 and D_i,t+1
+            |
+            v
+    Temporal train/validation/test split
+            |
+            +-------------------------------+
+            |                               |
+            v                               v
+    Conventional models              Network models
+    - Panel AR                       - Leontief
+    - Dynamic factor                 - Centrality regression
+    - Panel VAR                      - Network autoregression
+            |                               |
+            +---------------+---------------+
+                            |
+                            v
+                    Graph-only model
+                            |
+                            v
+                    Graph/Agent model
+                            |
+                            v
+                      2020 prediction
+                            |
+                            v
+                   Reveal actual outcomes
+                            |
+                            v
+                 RMSE / MAE / ranking
+                            |
+                            v
+                 Tail-risk classification
+                            |
+                            v
+              Calibration + decision value
+                            |
+                            v
+             Forecast-comparison statistics
+                            |
+                            v
+                     Ablation tests
+                            |
+                            v
+                  Robustness analysis
+                            |
+                            v
+               Economic interpretation
+                            |
+                            v
+                 Falsifiable conclusion
+
+48. THE CENTRAL SCIENTIFIC TEST
+
+The final result should answer one question without ambiguity:
+
+    Does the proposed Graph/Agent model predict the allocation
+    and propagation of a real economic shock across a real
+    production network better out of sample than conventional
+    econometric, input-output, and network models?
+
+The experiment should be considered successful only if the answer is
+supported by:
+
+    - a genuinely held-out test period
+    - a common information set
+    - serious conventional baselines
+    - serious network baselines
+    - pre-specified evaluation metrics
+    - statistical uncertainty
+    - ablation tests
+    - robustness checks
+    - reproducible data/model pipelines
+
+If the answer is no, that is not a failure of empirical science. It is
+the result the framework must accept.
+
+The key methodological principle is therefore:
+
+    Build the most defensible real network available,
+    fit the proposed model,
+    compare it against strong simpler alternatives,
+    hold the future out,
+    and let the data decide.
+
+SOURCE NOTES
+
+The source framework is: “A Graph-Theoretic World Model: Unifying
+Institutional Economics, Wealth Dynamics, and Multi-Agent Systems” dated
+August 18, 2026.
+
+Relevant source sections include: - Introduction and hypergraph axioms -
+Interaction taxonomy and financial primitives - POMDP agent
+decision-making - Wealth dynamics and graph diffusion - Data science,
+observables, and empirical dashboard - Model validation via
+prediction-observation divergence
+
+The source explicitly defines macroeconomic observables as graph
+functions and proposes empirical graph reconstruction from sparse
+observations. It also defines model divergence as the norm between
+predicted and measured observables.
+
+External empirical data source: OECD Inter-Country Input-Output (ICIO)
+Tables
+
+For the actual replication, record the exact OECD release/version used
+rather than relying on a generic dataset description.

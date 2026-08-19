@@ -1,0 +1,29 @@
+app:
+  name: "Economic Graph Agent Pipeline"
+  env: "development"
+
+data:
+  num_countries: 80
+  num_industries: 50
+  start_year: 1995
+  end_year: 2022
+  train_end_year: 2017
+  val_end_year: 2019
+  test_year: 2020
+  raw_monetary_scaling: 1000.0
+  edge_threshold: 1.0
+
+model:
+  hidden_dim: 64
+  num_layers: 2
+  learning_rate: 0.005
+  epochs: 50
+  batch_size: 1
+  tail_quantile: 0.10
+  seed: 42
+
+logging:
+  level: "INFO"
+  log_file: "logs/economic_graph.log"
+  max_bytes: 10485760
+  backup_count: 5
