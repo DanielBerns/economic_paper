@@ -13,6 +13,7 @@ Empirical Pipeline and Out-of-Sample Benchmark for Dynamic Graph-Agent Economic 
   - **Econometric Baselines**: Panel Autoregressions (Panel AR), Dynamic Factor Models (DFM), Panel Vector Autoregressions (Panel VAR).
   - **Input-Output & Spatial Models**: Leontief Input-Output Inverse, Network Centrality Regression, Spatial Autoregressions (Spatial AR).
   - **Graph Neural Network / Agent Models**: Model A (Graph-Only GNN), Model B (Dynamic Graph-Agent Network).
+- **Strategy Pattern Centrality Engine**: Supports both ultra-fast vectorized feature calculation (`"fast"`) and exact original NetworkX graph centralities (`"exact_networkx"`).
 - **Rigorous Statistical Evaluation**: Computes RMSE, MAE, Spearman $\rho$, AUPRC, pairwise Diebold-Mariano hypothesis tests, and economic policy decision utilities.
 - **Systemic Ablation Suite**: Evaluates 8 component-level model variants to quantify the contribution of graph topology and agent state dynamics.
 - **Publication Artifact Exporters**: Automatically generates high-resolution figures (`.png`, `.pdf`), formatted LaTeX tables (`.tex`), CSV outputs, and JSON evaluation reports.
@@ -28,13 +29,13 @@ Empirical Pipeline and Out-of-Sample Benchmark for Dynamic Graph-Agent Economic 
 
 ## Installation
 
-1. **Clone the repository** (if not already local) and navigate into the `economic_pipeline` directory:
+1. **Navigate into the `economic_pipeline` directory**:
 
    ```bash
    cd economic_pipeline
    ```
 
-2. **Sync dependencies**:
+2. **Sync dependencies and build local workspace packages**:
 
    Sync the workspace virtual environment including development tools (`pytest`, `ruff`, `mypy`):
 
@@ -70,6 +71,7 @@ data:
   test_year: 2020
   raw_monetary_scaling: 1000.0
   edge_threshold: 1.0
+  centrality_strategy: "fast"   # Options: "fast" (default, ~9s/snap) or "exact_networkx"
 
 model:
   hidden_dim: 64
@@ -87,9 +89,16 @@ logging:
   backup_count: 5
 ```
 
+### Centrality Computation Strategies
+
+The framework uses the **Strategy Pattern** for topological feature extraction:
+
+1. **`fast`** *(Default)*: Uses NumPy BLAS power iteration for eigenvector centrality and sampled sparse betweenness centrality ($k=50$). Dataset snapshot generation takes $\sim 4.2$ minutes for all 28 years.
+2. **`exact_networkx`**: Uses full NetworkX shortest-path betweenness (`nx.betweenness_centrality`) and eigenvector centrality (`nx.eigenvector_centrality`).
+
 ### Initializing Configuration
 
-To create or verify a configuration file:
+To generate or verify a default configuration file:
 
 ```bash
 uv run economic-graph --config config/settings.yaml --create
@@ -138,9 +147,9 @@ options:
   uv run economic-graph --run
   ```
 
-- **Run Pipeline with Custom Paths & Force Retraining**:
+- **Run Pipeline with Custom Configuration & Paths**:
   ```bash
-  uv run economic-graph --run --config config/settings.yaml --output-dir custom_output --checkpoint-dir custom_checkpoints --force-retrain
+  uv run economic-graph --run --config config/settings.yaml --output-dir output/results --checkpoint-dir output/checkpoints --force-retrain
   ```
 
 - **Alternative Python Module Invocation**:
@@ -152,13 +161,13 @@ options:
 
 ## Testing
 
-To run the unit test suite:
+To run the full unit test suite:
 
 ```bash
 uv run pytest
 ```
 
-To run individual test components:
+To run specific test modules:
 
 ```bash
 uv run pytest tests/test_cli.py

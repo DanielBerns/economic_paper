@@ -27,6 +27,7 @@ class DataSettings(BaseModel):
     test_year: int = Field(default=2020)
     raw_monetary_scaling: float = Field(default=1000.0)
     edge_threshold: float = Field(default=1.0)
+    centrality_strategy: str = Field(default="fast")
 
 
 class ModelSettings(BaseModel):

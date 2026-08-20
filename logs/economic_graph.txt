@@ -1,0 +1,88 @@
+danielwaltherberns@fedora:~/Apps/economic_paper/economic_pipeline$ uv run economic-graph --run
+[2026-08-20 15:08:11,624] [INFO] [economic_graph.cli:cli.py:69] - Starting empirical pipeline execution...
+[2026-08-20 15:08:11,625] [INFO] [economic_graph.pipeline:runner.py:57] - ================================================================================
+[2026-08-20 15:08:11,625] [INFO] [economic_graph.pipeline:runner.py:58] - Initializing OECD ICIO empirical pipeline execution...
+[2026-08-20 15:08:11,625] [INFO] [economic_graph.pipeline:runner.py:59] - Output Directory: /home/danielwaltherberns/Apps/economic_paper/economic_pipeline/output
+[2026-08-20 15:08:11,625] [INFO] [economic_graph.pipeline:runner.py:60] - Checkpoint Directory: /home/danielwaltherberns/Apps/economic_paper/economic_pipeline/checkpoints
+[2026-08-20 15:08:11,625] [INFO] [economic_graph.pipeline:runner.py:61] - ================================================================================
+[2026-08-20 15:13:48,523] [INFO] [economic_graph.pipeline:runner.py:73] - Dataset split: 23 train years (1995-2017), 2 val years, 1 held-out test year (2020).
+[2026-08-20 15:13:48,523] [INFO] [economic_graph.pipeline:runner.py:97] - [Progress 1/8 (12.5%)] Processing model: 'Panel AR (Fixed Effects)' | Total elapsed: 336.9s
+[2026-08-20 15:13:48,523] [INFO] [economic_graph.pipeline:runner.py:113] - -> Fitting 'Panel AR (Fixed Effects)' on training sample...
+[2026-08-20 15:13:50,215] [INFO] [economic_graph.pipeline:runner.py:116] - -> Saved checkpoint to checkpoints/panel_ar_fixed_effects.pt
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:469: UndefinedMetricWarning: Only one class is present in y_true. ROC AUC score is not defined in that case.
+  warnings.warn(
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:1192: UserWarning: No positive class found in y_true, recall is set to one for all thresholds.
+  warnings.warn(
+[2026-08-20 15:13:50,284] [INFO] [economic_graph.pipeline:runner.py:126] - -> Completed [Panel AR (Fixed Effects)] in 1.76s | RMSE: 0.0295, MAE: 0.0294, Spearman Rho: -0.6794, AUPRC: 0.0000
+[2026-08-20 15:13:50,285] [INFO] [economic_graph.pipeline:runner.py:97] - [Progress 2/8 (25.0%)] Processing model: 'Dynamic Factor Model' | Total elapsed: 338.7s
+[2026-08-20 15:13:50,285] [INFO] [economic_graph.pipeline:runner.py:113] - -> Fitting 'Dynamic Factor Model' on training sample...
+[2026-08-20 15:13:50,984] [INFO] [economic_graph.pipeline:runner.py:116] - -> Saved checkpoint to checkpoints/dynamic_factor_model.pt
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:469: UndefinedMetricWarning: Only one class is present in y_true. ROC AUC score is not defined in that case.
+  warnings.warn(
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:1192: UserWarning: No positive class found in y_true, recall is set to one for all thresholds.
+  warnings.warn(
+[2026-08-20 15:13:50,996] [INFO] [economic_graph.pipeline:runner.py:126] - -> Completed [Dynamic Factor Model] in 0.71s | RMSE: 0.0616, MAE: 0.0616, Spearman Rho: -1.0000, AUPRC: 0.0000
+[2026-08-20 15:13:50,996] [INFO] [economic_graph.pipeline:runner.py:97] - [Progress 3/8 (37.5%)] Processing model: 'Panel VAR' | Total elapsed: 339.4s
+[2026-08-20 15:13:50,997] [INFO] [economic_graph.pipeline:runner.py:113] - -> Fitting 'Panel VAR' on training sample...
+[2026-08-20 15:13:51,198] [INFO] [economic_graph.pipeline:runner.py:116] - -> Saved checkpoint to checkpoints/panel_var.pt
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:469: UndefinedMetricWarning: Only one class is present in y_true. ROC AUC score is not defined in that case.
+  warnings.warn(
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:1192: UserWarning: No positive class found in y_true, recall is set to one for all thresholds.
+  warnings.warn(
+[2026-08-20 15:13:51,212] [INFO] [economic_graph.pipeline:runner.py:126] - -> Completed [Panel VAR] in 0.22s | RMSE: 0.0620, MAE: 0.0620, Spearman Rho: -0.9938, AUPRC: 0.0000
+[2026-08-20 15:13:51,212] [INFO] [economic_graph.pipeline:runner.py:97] - [Progress 4/8 (50.0%)] Processing model: 'Leontief IO Model' | Total elapsed: 339.6s
+[2026-08-20 15:13:51,212] [INFO] [economic_graph.pipeline:runner.py:113] - -> Fitting 'Leontief IO Model' on training sample...
+[2026-08-20 15:16:09,683] [INFO] [economic_graph.pipeline:runner.py:116] - -> Saved checkpoint to checkpoints/leontief_io_model.pt
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:469: UndefinedMetricWarning: Only one class is present in y_true. ROC AUC score is not defined in that case.
+  warnings.warn(
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:1192: UserWarning: No positive class found in y_true, recall is set to one for all thresholds.
+  warnings.warn(
+[2026-08-20 15:16:15,922] [INFO] [economic_graph.pipeline:runner.py:126] - -> Completed [Leontief IO Model] in 144.71s | RMSE: 0.0188, MAE: 0.0187, Spearman Rho: -0.0346, AUPRC: 0.0000
+[2026-08-20 15:16:15,922] [INFO] [economic_graph.pipeline:runner.py:97] - [Progress 5/8 (62.5%)] Processing model: 'Centrality Regression' | Total elapsed: 484.3s
+[2026-08-20 15:16:15,923] [INFO] [economic_graph.pipeline:runner.py:113] - -> Fitting 'Centrality Regression' on training sample...
+[2026-08-20 15:16:16,982] [INFO] [economic_graph.pipeline:runner.py:116] - -> Saved checkpoint to checkpoints/centrality_regression.pt
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:469: UndefinedMetricWarning: Only one class is present in y_true. ROC AUC score is not defined in that case.
+  warnings.warn(
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:1192: UserWarning: No positive class found in y_true, recall is set to one for all thresholds.
+  warnings.warn(
+[2026-08-20 15:16:17,032] [INFO] [economic_graph.pipeline:runner.py:126] - -> Completed [Centrality Regression] in 1.11s | RMSE: 0.0692, MAE: 0.0692, Spearman Rho: -0.1973, AUPRC: 0.0000
+[2026-08-20 15:16:17,035] [INFO] [economic_graph.pipeline:runner.py:97] - [Progress 6/8 (75.0%)] Processing model: 'Spatial Autoregression' | Total elapsed: 485.4s
+[2026-08-20 15:16:17,036] [INFO] [economic_graph.pipeline:runner.py:113] - -> Fitting 'Spatial Autoregression' on training sample...
+[2026-08-20 15:16:19,054] [INFO] [economic_graph.pipeline:runner.py:116] - -> Saved checkpoint to checkpoints/spatial_autoregression.pt
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:469: UndefinedMetricWarning: Only one class is present in y_true. ROC AUC score is not defined in that case.
+  warnings.warn(
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:1192: UserWarning: No positive class found in y_true, recall is set to one for all thresholds.
+  warnings.warn(
+[2026-08-20 15:16:19,094] [INFO] [economic_graph.pipeline:runner.py:126] - -> Completed [Spatial Autoregression] in 2.06s | RMSE: 0.0692, MAE: 0.0692, Spearman Rho: -0.0787, AUPRC: 0.0000
+[2026-08-20 15:16:19,094] [INFO] [economic_graph.pipeline:runner.py:97] - [Progress 7/8 (87.5%)] Processing model: 'Graph-Only Model (Model A)' | Total elapsed: 487.5s
+[2026-08-20 15:16:19,108] [INFO] [economic_graph.pipeline:runner.py:111] - -> Loaded pre-trained checkpoint for 'Graph-Only Model (Model A)'. Skipping training.
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:469: UndefinedMetricWarning: Only one class is present in y_true. ROC AUC score is not defined in that case.
+  warnings.warn(
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:1192: UserWarning: No positive class found in y_true, recall is set to one for all thresholds.
+  warnings.warn(
+[2026-08-20 15:16:19,192] [INFO] [economic_graph.pipeline:runner.py:126] - -> Completed [Graph-Only Model (Model A)] in 0.10s | RMSE: 27.5214, MAE: 21.9114, Spearman Rho: -0.0336, AUPRC: 0.0000
+[2026-08-20 15:16:19,192] [INFO] [economic_graph.pipeline:runner.py:97] - [Progress 8/8 (100.0%)] Processing model: 'Graph/Agent Model (Model B)' | Total elapsed: 487.6s
+[2026-08-20 15:16:19,198] [INFO] [economic_graph.pipeline:runner.py:111] - -> Loaded pre-trained checkpoint for 'Graph/Agent Model (Model B)'. Skipping training.
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:469: UndefinedMetricWarning: Only one class is present in y_true. ROC AUC score is not defined in that case.
+  warnings.warn(
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:1192: UserWarning: No positive class found in y_true, recall is set to one for all thresholds.
+  warnings.warn(
+[2026-08-20 15:16:19,301] [INFO] [economic_graph.pipeline:runner.py:126] - -> Completed [Graph/Agent Model (Model B)] in 0.11s | RMSE: 0.0523, MAE: 0.0520, Spearman Rho: 0.8599, AUPRC: 0.0000
+[2026-08-20 15:16:19,301] [INFO] [economic_graph.pipeline:runner.py:132] - Computing pairwise Diebold-Mariano statistical forecast comparison tests...
+[2026-08-20 15:16:19,305] [INFO] [economic_graph.pipeline:runner.py:142] - Computing Economic Policy Decision Utility curves across thresholds c...
+[2026-08-20 15:16:19,312] [INFO] [economic_graph.pipeline:runner.py:149] - Executing 8-component systemic ablation suite...
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:469: UndefinedMetricWarning: Only one class is present in y_true. ROC AUC score is not defined in that case.
+  warnings.warn(
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:1192: UserWarning: No positive class found in y_true, recall is set to one for all thresholds.
+  warnings.warn(
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:469: UndefinedMetricWarning: Only one class is present in y_true. ROC AUC score is not defined in that case.
+  warnings.warn(
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:1192: UserWarning: No positive class found in y_true, recall is set to one for all thresholds.
+  warnings.warn(
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/packages/economic-graph/src/economic_graph/pipeline/evaluator.py:32: ConstantInputWarning: An input array is constant; the correlation coefficient is not defined.
+  rho, _ = spearmanr(pred_growth, target_growth)
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:469: UndefinedMetricWarning: Only one class is present in y_true. ROC AUC score is not defined in that case.
+  warnings.warn(
+/home/danielwaltherberns/Apps/economic_paper/economic_pipeline/.venv/lib64/python3.14/site-packages/sklearn/metrics/_ranking.py:1192: UserWarning: No positive class found in y_true, recall is set to one for all thresholds.
+  warnings.warn(
+danielwaltherberns@fedora:~/Apps/economic_paper/economic_pipeline$ 

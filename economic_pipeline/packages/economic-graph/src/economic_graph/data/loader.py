@@ -71,7 +71,11 @@ class ICIODatasetLoader:
             M_imp = Z_t.sum(axis=0) * 0.3
 
             W_share_t = compute_input_share_matrix(Z_t)
-            centralities_t = compute_topological_centralities(Z_t, self.config.data.edge_threshold)
+            centralities_t = compute_topological_centralities(
+                Z_t,
+                self.config.data.edge_threshold,
+                strategy=self.config.data.centrality_strategy,
+            )
             S_t = construct_node_state_matrix(Y_t, VA_t, X_exp, M_imp, F_t, centralities_t)
 
             raw_outputs.append(Y_t)

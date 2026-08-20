@@ -30,14 +30,16 @@ def test_input_output_matrices():
 def test_topological_centralities():
     N = 10
     Z = np.random.uniform(0.5, 5.0, size=(N, N))
-    cents = compute_topological_centralities(Z, threshold=1.0)
-
-    assert "in_degree" in cents
-    assert "out_degree" in cents
-    assert "betweenness" in cents
-    assert "eigenvector" in cents
-    assert "herfindahl" in cents
-    assert len(cents["in_degree"]) == N
+    for strat in ("fast", "exact_networkx"):
+        cents = compute_topological_centralities(Z, threshold=1.0, strategy=strat)
+        assert "in_degree" in cents
+        assert "out_degree" in cents
+        assert "betweenness" in cents
+        assert "eigenvector" in cents
+        assert "herfindahl" in cents
+        assert len(cents["in_degree"]) == N
+        assert len(cents["betweenness"]) == N
+        assert len(cents["eigenvector"]) == N
 
 
 def test_icio_loader_small():
