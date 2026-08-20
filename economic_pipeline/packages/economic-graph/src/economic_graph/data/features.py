@@ -21,20 +21,39 @@ def compute_topological_centralities(
     W_share = Z / col_sums[np.newaxis, :]
     herfindahl = (W_share**2).sum(axis=0)
 
-    # NetworkX centrality computation on subset for speed / efficiency
-    G = nx.from_numpy_array(W_share, create_using=nx.DiGraph)
-
+    # Vectorized power iteration for eigenvector centrality (fast BLAS/NumPy)
     try:
-        betweenness_dict = nx.betweenness_centrality(G, weight="weight")
-        betweenness = np.array([betweenness_dict.get(i, 0.0) for i in range(N)])
-    except Exception:
-        betweenness = np.zeros(N)
-
-    try:
-        eigen_dict = nx.eigenvector_centrality(G, max_iter=200, weight="weight")
-        eigenvector = np.array([eigen_dict.get(i, 0.0) for i in range(N)])
+        eigenvector = np.ones(N) / N
+        for _ in range(50):
+            eigen_next = W_share @ eigenvector
+            norm = np.linalg.norm(eigen_next)
+            if norm < 1e-12:
+                break
+            eigen_next /= norm
+            if np.allclose(eigenvector, eigen_next, atol=1e-6):
+                eigenvector = eigen_next
+                break
+            eigenvector = eigen_next
     except Exception:
         eigenvector = in_strength / (in_strength.sum() + 1e-6)
+
+    # Fast sampled betweenness centrality on thresholded graph
+    try:
+        if N > 500:
+            thresh = max(1e-4, float(np.percentile(W_share, 98)))
+            W_sparse = np.where(W_share >= thresh, W_share, 0.0)
+            G_sparse = nx.from_numpy_array(W_sparse, create_using=nx.DiGraph)
+            betweenness_dict = nx.betweenness_centrality(
+                G_sparse, k=min(N, 50), weight="weight", seed=42
+            )
+        else:
+            G = nx.from_numpy_array(W_share, create_using=nx.DiGraph)
+            betweenness_dict = nx.betweenness_centrality(
+                G, k=min(N, 50), weight="weight", seed=42
+            )
+        betweenness = np.array([betweenness_dict.get(i, 0.0) for i in range(N)])
+    except Exception:
+        betweenness = (in_strength * out_strength) / (N * (in_strength.sum() + 1e-6))
 
     return {
         "in_degree": in_degree,
