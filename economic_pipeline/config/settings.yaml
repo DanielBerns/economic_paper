@@ -1,29 +1,32 @@
 app:
-  name: "Economic Graph Agent Pipeline"
-  env: "development"
-
+  checkpoint_dir: checkpoints
+  env: development
+  force_retrain: false
+  name: Economic Graph Agent Pipeline
+  output_dir: output
+  progress_interval_sec: 10
+  verbose: true
 data:
+  centrality_strategy: fast
+  edge_threshold: 1.0
+  end_year: 2022
   num_countries: 80
   num_industries: 50
-  start_year: 1995
-  end_year: 2022
-  train_end_year: 2017
-  val_end_year: 2019
-  test_year: 2020
   raw_monetary_scaling: 1000.0
-  edge_threshold: 1.0
-
-model:
-  hidden_dim: 64
-  num_layers: 2
-  learning_rate: 0.005
-  epochs: 50
-  batch_size: 1
-  tail_quantile: 0.10
-  seed: 42
-
+  start_year: 1995
+  test_year: 2019
+  train_end_year: 2017
+  val_end_year: 2018
 logging:
-  level: "INFO"
-  log_file: "logs/economic_graph.log"
-  max_bytes: 10485760
   backup_count: 5
+  level: INFO
+  log_file: logs/economic_graph.log
+  max_bytes: 10485760
+model:
+  batch_size: 1
+  epochs: 50
+  hidden_dim: 64
+  learning_rate: 0.005
+  num_layers: 2
+  seed: 42
+  tail_quantile: 0.1

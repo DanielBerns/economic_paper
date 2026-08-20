@@ -1,9 +1,0 @@
-Model Specification,RMSE,MAE,Spearman Rho,AUROC,AUPRC,Top-10% Precision,Top-10% Recall,Brier Score,DM p-value
-Panel AR (Fixed Effects),0.1151,0.0762,-0.8182,nan,0.0000,0.0000,0.0000,0.0325,0.0002
-Dynamic Factor Model,0.1935,0.1660,-1.0000,nan,0.0000,0.0000,0.0000,0.0247,0.0000
-Panel VAR,0.1766,0.1487,-0.9580,nan,0.0000,0.0000,0.0000,0.0215,0.0000
-Leontief IO Model,0.0889,0.0784,0.3672,nan,0.0000,0.0000,0.0000,0.0013,0.0069
-Centrality Regression,0.1953,0.1662,-0.9510,nan,0.0000,0.0000,0.0000,0.0322,0.0001
-Spatial Autoregression,0.2525,0.2264,-0.8811,nan,0.0000,0.0000,0.0000,0.0331,1.0000
-Graph-Only Model (Model A),11.8895,11.3755,0.5105,nan,0.0000,0.0000,0.0000,1.0000,0.0000
-Graph/Agent Model (Model B),0.1342,0.1157,0.3901,nan,0.0000,0.0000,0.0000,0.0888,0.0127

@@ -44,9 +44,9 @@ def test_pipeline_runner_small(tmp_path):
     app_config.data.num_industries = 4
     app_config.data.start_year = 2015
     app_config.data.end_year = 2021
-    app_config.data.train_end_year = 2018
-    app_config.data.val_end_year = 2019
-    app_config.data.test_year = 2020
+    app_config.data.train_end_year = 2017
+    app_config.data.val_end_year = 2018
+    app_config.data.test_year = 2019
     app_config.model.epochs = 1
     cfg = Config(app_config)
 

@@ -56,7 +56,8 @@ class ModelAGraphOnly(BaseModel):
                 next_snap = train_snapshots[t + 1]
 
                 x_np = np.column_stack([snap.target_growth, snap.S])
-                x_t = torch.tensor(x_np, dtype=torch.float32)
+                x_norm = np.clip((x_np - np.mean(x_np, axis=0)) / (np.std(x_np, axis=0) + 1e-5), -5.0, 5.0)
+                x_t = torch.tensor(x_norm, dtype=torch.float32)
                 W_t = torch.tensor(snap.W_share, dtype=torch.float32)
                 y_g = torch.tensor(next_snap.target_growth, dtype=torch.float32)
                 y_d = torch.tensor(next_snap.target_tail, dtype=torch.float32)
@@ -67,6 +68,7 @@ class ModelAGraphOnly(BaseModel):
 
                 loss = criterion_cont(pred_g, y_g) + criterion_tail(pred_d_clamped, y_d)
                 loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.net.parameters(), 1.0)
                 optimizer.step()
 
         self.is_fitted = True
@@ -75,7 +77,8 @@ class ModelAGraphOnly(BaseModel):
         self.net.eval()
         with torch.no_grad():
             x_np = np.column_stack([snapshot.target_growth, snapshot.S])
-            x_t = torch.tensor(x_np, dtype=torch.float32)
+            x_norm = np.clip((x_np - np.mean(x_np, axis=0)) / (np.std(x_np, axis=0) + 1e-5), -5.0, 5.0)
+            x_t = torch.tensor(x_norm, dtype=torch.float32)
             W_t = torch.tensor(snapshot.W_share, dtype=torch.float32)
 
             pred_g, pred_d = self.net(x_t, W_t)

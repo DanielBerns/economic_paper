@@ -27,4 +27,4 @@ def test_resolve_config_path_default():
 def test_read_config_fallback(tmp_path):
     cfg_file = tmp_path / "test_settings.yaml"
     cfg = read_config(config_path_override=cfg_file)
-    assert cfg.data.test_year == 2020
+    assert cfg.data.test_year == 2019

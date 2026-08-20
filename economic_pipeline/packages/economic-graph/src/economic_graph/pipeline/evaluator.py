@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass
 
 import numpy as np
@@ -29,19 +30,30 @@ def compute_metrics(
     mae = float(np.mean(np.abs(pred_growth - target_growth)))
 
     # Spearman rank correlation
-    rho, _ = spearmanr(pred_growth, target_growth)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        rho, _ = spearmanr(pred_growth, target_growth)
     spearman_rho = float(rho) if not np.isnan(rho) else 0.0
 
     # Tail risk classification metrics
-    try:
-        auroc = float(roc_auc_score(target_tail, pred_prob))
-    except Exception:
+    num_positives = np.sum(target_tail == 1.0)
+    if len(np.unique(target_tail)) < 2 or num_positives == 0:
         auroc = 0.5
+        auprc = 0.0
+    else:
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                auroc = float(roc_auc_score(target_tail, pred_prob))
+        except Exception:
+            auroc = 0.5
 
-    try:
-        auprc = float(average_precision_score(target_tail, pred_prob))
-    except Exception:
-        auprc = 0.1
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                auprc = float(average_precision_score(target_tail, pred_prob))
+        except Exception:
+            auprc = 0.0
 
     # Top 10% predicted risk metrics
     k = max(1, int(len(pred_prob) * 0.10))

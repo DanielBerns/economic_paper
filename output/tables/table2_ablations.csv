@@ -1,6 +1,0 @@
-Ablation Specification,RMSE,MAE,Spearman Rho,AUPRC,Delta RMSE
-Full Graph/Agent Model (Model B),0.1016,0.0816,0.4895,0.0000,+0.0000
-Ablation A: No Graph,0.0892,0.0798,-0.2560,0.0000,-0.0124
-Ablation B: Unweighted Edges,0.2143,0.1922,-0.2672,0.0000,+0.1127
-Ablation C: Symmetrized Graph,0.1800,0.1545,-0.4061,0.0000,+0.0784
-Ablation D: No Centralities,0.1053,0.0905,0.2334,0.0000,+0.0037
