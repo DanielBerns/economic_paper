@@ -104,3 +104,12 @@ Thumbs.db
 # uv
 # ========================
 uv.lock
+
+# ========================
+# economic_paper
+# ========================
+prompts/
+economic_pipeline/output/
+economic_pipeline/checkpoints/
+economic_pipeline/logs/
+
