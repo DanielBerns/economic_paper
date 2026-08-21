@@ -111,10 +111,10 @@ class PanelVARModel(BaseModel):
             next_snap = train_snapshots[t + 1]
 
             N = len(snap.target_growth)
-            num_ind = 50 if N >= 50 and N % 50 == 0 else max(1, N // 4)
+            num_ind = 50 if N >= 50 and N % 50 == 0 else max(1, int(np.sqrt(N)))
             num_c = max(1, N // num_ind)
             c_means = snap.target_growth[: num_c * num_ind].reshape(num_c, num_ind).mean(axis=1)
-            country_means = np.repeat(c_means, num_ind)[:N, np.newaxis]
+            country_means = np.resize(np.repeat(c_means, num_ind), N)[:, np.newaxis]
             feats = np.column_stack([snap.target_growth, country_means])
 
             X_list.append(feats)
@@ -131,10 +131,10 @@ class PanelVARModel(BaseModel):
 
     def predict(self, snapshot: EconomicGraphSnapshot) -> Tuple[np.ndarray, np.ndarray]:
         N = len(snapshot.target_growth)
-        num_ind = 50 if N >= 50 and N % 50 == 0 else max(1, N // 4)
+        num_ind = 50 if N >= 50 and N % 50 == 0 else max(1, int(np.sqrt(N)))
         num_c = max(1, N // num_ind)
         c_means = snapshot.target_growth[: num_c * num_ind].reshape(num_c, num_ind).mean(axis=1)
-        country_means = np.repeat(c_means, num_ind)[:N, np.newaxis]
+        country_means = np.resize(np.repeat(c_means, num_ind), N)[:, np.newaxis]
         feats = np.column_stack([snapshot.target_growth, country_means])
 
         pred_growth = self.reg_cont.predict(feats)

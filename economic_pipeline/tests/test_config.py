@@ -28,3 +28,13 @@ def test_read_config_fallback(tmp_path):
     cfg_file = tmp_path / "test_settings.yaml"
     cfg = read_config(config_path_override=cfg_file)
     assert cfg.data.test_year == 2019
+
+
+def test_quicktest_config_override():
+    app_config = AppConfig()
+    app_config.app.quicktest = True
+    cfg = Config(app_config)
+    assert cfg.data.num_countries == 5
+    assert cfg.data.num_industries == 5
+    assert cfg.model.epochs == 2
+    assert cfg.data.centrality_strategy == "fast"

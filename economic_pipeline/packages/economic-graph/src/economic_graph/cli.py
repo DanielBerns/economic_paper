@@ -1,7 +1,10 @@
 import argparse
 import sys
+from pathlib import Path
 
-from economic_graph.config import read_config
+import yaml
+
+from economic_graph.config import AppConfig, read_config, resolve_config_path
 from economic_graph.logging import setup_logger
 
 
@@ -32,6 +35,11 @@ def main(args_list=None):
         "--init", action="store_true", help="Initialize workspace and configuration"
     )
     parser.add_argument(
+        "--centrality-strategy",
+        choices=["fast", "exact_networkx"],
+        help="Select topological centrality computation strategy ('fast' BLAS power-iteration or 'exact_networkx')",
+    )
+    parser.add_argument(
         "--run", action="store_true", help="Execute the complete empirical pipeline"
     )
     parser.add_argument(
@@ -50,18 +58,33 @@ def main(args_list=None):
         config.app.output_dir = args.output_dir
     if args.force_retrain:
         config.app.force_retrain = True
+    if args.centrality_strategy:
+        config.data.centrality_strategy = args.centrality_strategy
 
     logger = setup_logger("economic_graph.cli", config.logging)
 
-    if args.create:
-        logger.info("Configuration processed via --create flag.")
-        print(f"Configuration file processed for workspace: {config.app.name}")
-        return 0
+    # Handle workspace initialization and configuration file creation
+    if args.create or args.init:
+        cfg_path, _ = resolve_config_path(args_list)
+        cfg_path.parent.mkdir(parents=True, exist_ok=True)
+        if not cfg_path.exists():
+            with open(cfg_path, "w") as f:
+                yaml.dump(AppConfig().model_dump(), f, default_flow_style=False)
+            logger.info(f"Created default configuration file at {cfg_path}")
 
-    if args.init:
-        logger.info("Initializing economic graph pipeline workspace...")
-        print(f"Workspace initialized with configuration: {config.app.name}")
-        return 0
+        Path(config.app.checkpoint_dir).mkdir(parents=True, exist_ok=True)
+        Path(config.app.output_dir).mkdir(parents=True, exist_ok=True)
+        Path(config.logging.log_file).parent.mkdir(parents=True, exist_ok=True)
+
+        if args.create:
+            logger.info("Configuration processed via --create flag.")
+            print(f"Configuration file processed for workspace: {config.app.name}")
+        if args.init:
+            logger.info("Initializing economic graph pipeline workspace...")
+            print(f"Workspace initialized with configuration: {config.app.name}")
+
+        if not args.run:
+            return 0
 
     if args.run:
         from economic_graph.pipeline.runner import PipelineRunner
@@ -71,7 +94,7 @@ def main(args_list=None):
         report = runner.run_pipeline()
 
         print("\n" + "=" * 80)
-        print("DECISIVE EMPIRICAL BASELINE COMPARISON TABLE (Held-Out 2020 Test Set)")
+        print("DECISIVE EMPIRICAL BASELINE COMPARISON TABLE (Held-Out Test Set)")
         print("=" * 80)
         print(
             f"{'Model Specification':<32} | {'RMSE':<7} | {'MAE':<7} | {'Spearman':<8} | {'AUPRC':<7} | {'DM p-val':<8}"
@@ -93,7 +116,7 @@ def main(args_list=None):
         print("=" * 80)
 
         print(
-            f"\nPrediction-Observation Divergence Delta(2020): {report.divergence_delta:.2f}"
+            f"\nPrediction-Observation Divergence Delta: {report.divergence_delta:.2f}"
         )
         print(f"Refalsification Triggered: {report.refalsification_triggered}")
         print("=" * 80)

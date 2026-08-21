@@ -13,6 +13,7 @@ class AppSettings(BaseModel):
     output_dir: str = Field(default="output")
     checkpoint_dir: str = Field(default="checkpoints")
     force_retrain: bool = Field(default=False)
+    quicktest: bool = Field(default=False)
     verbose: bool = Field(default=True)
     progress_interval_sec: int = Field(default=10)
 
@@ -59,6 +60,11 @@ class Config:
 
     def __init__(self, settings: AppConfig):
         self._settings = settings
+        if self._settings.app.quicktest:
+            self._settings.data.num_countries = 5
+            self._settings.data.num_industries = 5
+            self._settings.data.centrality_strategy = "fast"
+            self._settings.model.epochs = 2
 
     @property
     def app(self) -> AppSettings:

@@ -61,13 +61,18 @@ class PipelineRunner:
         self.logger.info("=" * 80)
 
         snapshots = self.loader.generate_synthetic_icio()
+        self.logger.info(f"Snapshots: {len(snapshots)}")
 
         train_snaps = [s for s in snapshots if s.year <= self.config.data.train_end_year]
+        self.logger.info(f"train_snaps: {len(train_snaps)}")
+
         val_snaps = [
             s
             for s in snapshots
             if self.config.data.train_end_year < s.year <= self.config.data.val_end_year
         ]
+        self.logger.info(f"val_snaps: {len(val_snaps)}")
+
         test_snap = next(s for s in snapshots if s.year == self.config.data.test_year)
 
         self.logger.info(

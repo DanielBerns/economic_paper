@@ -60,6 +60,7 @@ app:
   checkpoint_dir: "checkpoints"
   output_dir: "output"
   force_retrain: false
+  quicktest: false              # Set to true for rapid testing (5x5 graph, 2 epochs, ~2s runtime)
 
 data:
   num_countries: 80
@@ -67,8 +68,8 @@ data:
   start_year: 1995
   end_year: 2022
   train_end_year: 2017
-  val_end_year: 2019
-  test_year: 2020
+  val_end_year: 2018
+  test_year: 2019
   raw_monetary_scaling: 1000.0
   edge_threshold: 1.0
   centrality_strategy: "fast"   # Options: "fast" (default, ~9s/snap) or "exact_networkx"
@@ -116,7 +117,7 @@ You can run `economic-graph` directly through `uv run`.
 usage: economic-graph [-h] [--config CONFIG] [--create]
                       [--checkpoint-dir CHECKPOINT_DIR]
                       [--output-dir OUTPUT_DIR] [--force-retrain] [--init]
-                      [--run] [--report]
+                      [--centrality-strategy {fast,exact_networkx}] [--run] [--report]
 
 options:
   -h, --help            Show help message and exit
@@ -126,6 +127,7 @@ options:
   --output-dir DIR      Directory to export tables, figures, CSVs, and reports
   --force-retrain       Force retrain models from scratch, ignoring saved checkpoints
   --init                Initialize workspace structure and configuration
+  --centrality-strategy  Select topological centrality computation strategy ('fast' or 'exact_networkx')
   --run                 Execute the complete empirical pipeline
   --report              Print summary evaluation tables
 ```
@@ -142,7 +144,7 @@ options:
   uv run economic-graph --init
   ```
 
-- **Run Empirical Pipeline**:
+- **Run Full Empirical Pipeline**:
   ```bash
   uv run economic-graph --run
   ```
@@ -154,7 +156,7 @@ options:
 
 - **Alternative Python Module Invocation**:
   ```bash
-  uv run python -m economic_graph.cli --run
+  uv run python -m economic_graph.cli --fast --run
   ```
 
 ---

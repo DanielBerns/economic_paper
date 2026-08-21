@@ -5,6 +5,7 @@ app:
   name: Economic Graph Agent Pipeline
   output_dir: output
   progress_interval_sec: 10
+  quicktest: false
   verbose: true
 data:
   centrality_strategy: fast
