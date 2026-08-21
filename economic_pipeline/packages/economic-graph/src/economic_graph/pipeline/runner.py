@@ -150,11 +150,6 @@ class PipelineRunner:
             u = compute_economic_decision_utility(p_tail, test_snap.target_tail)
             decision_utilities[model_name] = u
 
-        # Systemic Ablation Suite
-        self.logger.info("Executing 8-component systemic ablation suite...")
-        ablation_engine = AblationEngine(self.config)
-        ablation_table = ablation_engine.run_ablations(train_snaps, test_snap)
-
         # Prediction-Observation Divergence Delta(t)
         model_b_growth = predictions_growth["Graph/Agent Model (Model B)"]
         pred_output_2020 = test_snap.Y * np.exp(model_b_growth)
@@ -168,13 +163,11 @@ class PipelineRunner:
             f"Refalsification Triggered: {refalsification_triggered}."
         )
 
-        # Export all publication artifacts (Tables, Figures, CSVs, Reports)
-        self.logger.info("Exporting all publication tables, high-resolution figures, and predictions...")
+        # Export main publication artifacts (Table 1, Figures, Predictions CSV)
+        self.logger.info("Exporting main publication tables, high-resolution figures, and predictions...")
         t1_csv, t1_tex = self.exporter.export_main_table(metrics_table, dm_pvalues)
-        t2_csv, t2_tex = self.exporter.export_ablation_table(ablation_table)
         fig_png, fig_pdf = self.exporter.export_figures(decision_utilities)
 
-        # Export predictions CSV
         pred_df = pd.DataFrame(
             {
                 "node_id": list(range(len(test_snap.target_growth))),
@@ -188,6 +181,18 @@ class PipelineRunner:
 
         pred_csv = self.exporter.predictions_dir / "predictions_2020.csv"
         pred_df.to_csv(pred_csv, index=False)
+
+        # Systemic Ablation Suite
+        ablation_table: Dict[str, EvaluationMetrics] = {}
+        t2_csv, t2_tex = "", ""
+        try:
+            self.logger.info("Executing 8-component systemic ablation suite...")
+            ablation_engine = AblationEngine(self.config)
+            ablation_table = ablation_engine.run_ablations(train_snaps, test_snap)
+            res_t2_csv, res_t2_tex = self.exporter.export_ablation_table(ablation_table)
+            t2_csv, t2_tex = str(res_t2_csv), str(res_t2_tex)
+        except Exception as ae:
+            self.logger.error(f"Ablation suite encounter error: {ae}")
 
         # Export JSON report
         report_dict = {
@@ -209,8 +214,8 @@ class PipelineRunner:
         output_paths = {
             "table1_csv": str(t1_csv),
             "table1_tex": str(t1_tex),
-            "table2_csv": str(t2_csv),
-            "table2_tex": str(t2_tex),
+            "table2_csv": t2_csv,
+            "table2_tex": t2_tex,
             "figure_png": str(fig_png),
             "figure_pdf": str(fig_pdf),
             "predictions_csv": str(pred_csv),

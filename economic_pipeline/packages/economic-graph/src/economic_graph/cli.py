@@ -126,9 +126,32 @@ def main(args_list=None):
         print("=" * 80 + "\n")
         return 0
 
-    if not args.report:
-        parser.print_help()
+    if args.report:
+        tables_dir = Path(config.app.output_dir) / "tables"
+        t1_csv = tables_dir / "table1_main_results.csv"
+        t2_csv = tables_dir / "table2_ablations.csv"
 
+        if t1_csv.exists():
+            import pandas as pd
+            df1 = pd.read_csv(t1_csv)
+            print("\n" + "=" * 80)
+            print("DECISIVE EMPIRICAL BASELINE COMPARISON TABLE (Held-Out Test Set)")
+            print("=" * 80)
+            print(df1.to_string(index=False))
+            print("=" * 80)
+
+            if t2_csv.exists():
+                df2 = pd.read_csv(t2_csv)
+                print("\nSYSTEMIC ABLATION STUDY RESULTS")
+                print("-" * 80)
+                print(df2.to_string(index=False))
+                print("=" * 80 + "\n")
+        else:
+            print(f"\nNo empirical report table found at {t1_csv}.")
+            print("Please run the pipeline first using: uv run economic-graph --run\n")
+        return 0
+
+    parser.print_help()
     return 0
 
 

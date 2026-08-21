@@ -24,6 +24,8 @@ class AblationEngine:
         ablation_cfg = deepcopy(self.config)
         ablation_cfg.app.force_retrain = True
 
+        import gc
+
         # 0. Baseline Model B
         base_model = ModelBDynamicGraphAgent(ablation_cfg)
         base_model.fit(train_snapshots)
@@ -31,6 +33,8 @@ class AblationEngine:
         results["Full Graph/Agent Model (Model B)"] = compute_metrics(
             pg, pd, test_snapshot.target_growth, test_snapshot.target_tail
         )
+        del base_model
+        gc.collect()
 
         # Ablation A: No Graph (Zero out W_share)
         train_A = [self._copy_snapshot(s, zero_W=True) for s in train_snapshots]
@@ -41,6 +45,8 @@ class AblationEngine:
         results["Ablation A: No Graph"] = compute_metrics(
             pg, pd, test_snapshot.target_growth, test_snapshot.target_tail
         )
+        del mA, train_A, test_A
+        gc.collect()
 
         # Ablation B: Unweighted Edges
         train_B = [self._copy_snapshot(s, binary_W=True) for s in train_snapshots]
@@ -51,6 +57,8 @@ class AblationEngine:
         results["Ablation B: Unweighted Edges"] = compute_metrics(
             pg, pd, test_snapshot.target_growth, test_snapshot.target_tail
         )
+        del mB, train_B, test_B
+        gc.collect()
 
         # Ablation C: Symmetrized Graph
         train_C = [self._copy_snapshot(s, sym_W=True) for s in train_snapshots]
@@ -61,6 +69,8 @@ class AblationEngine:
         results["Ablation C: Symmetrized Graph"] = compute_metrics(
             pg, pd, test_snapshot.target_growth, test_snapshot.target_tail
         )
+        del mC, train_C, test_C
+        gc.collect()
 
         # Ablation D: No Centralities
         train_D = [self._copy_snapshot(s, no_cent=True) for s in train_snapshots]
@@ -71,6 +81,8 @@ class AblationEngine:
         results["Ablation D: No Centralities"] = compute_metrics(
             pg, pd, test_snapshot.target_growth, test_snapshot.target_tail
         )
+        del mD, train_D, test_D
+        gc.collect()
 
         return results
 
