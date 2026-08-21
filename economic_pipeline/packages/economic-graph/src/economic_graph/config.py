@@ -29,6 +29,9 @@ class DataSettings(BaseModel):
     raw_monetary_scaling: float = Field(default=1000.0)
     edge_threshold: float = Field(default=1.0)
     centrality_strategy: str = Field(default="fast")
+    centrality_k: int = Field(default=50, ge=1)
+    centrality_percentile: float = Field(default=98.0, ge=0.0, le=100.0)
+    centrality_weight_mode: str = Field(default="none")
 
 
 class ModelSettings(BaseModel):

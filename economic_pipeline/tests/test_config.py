@@ -8,6 +8,10 @@ def test_app_config_defaults():
     assert config.app.name == "Economic Graph Agent Pipeline"
     assert config.data.num_countries == 80
     assert config.data.num_industries == 50
+    assert config.data.centrality_strategy == "fast"
+    assert config.data.centrality_k == 50
+    assert config.data.centrality_percentile == 98.0
+    assert config.data.centrality_weight_mode == "none"
     assert config.model.hidden_dim == 64
 
 

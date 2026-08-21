@@ -57,6 +57,10 @@ data:
   test_year: 2020
   raw_monetary_scaling: 1000.0
   edge_threshold: 1.0
+  centrality_strategy: fast
+  centrality_k: 50
+  centrality_percentile: 98.0
+  centrality_weight_mode: none
 
 model:
   hidden_dim: 64
@@ -87,6 +91,10 @@ logging:
 | `data.train_end_year`     | No       | `2017`                     | End of historical training split.                             |
 | `data.val_end_year`       | No       | `2019`                     | End of hyperparameter validation split.                       |
 | `data.test_year`          | No       | `2020`                     | Held-out out-of-sample crisis test year.                      |
+| `data.centrality_strategy`| No       | `fast`                     | Centrality strategy (`fast`, `unweighted`, `distance_inverted`, `exact_networkx`). |
+| `data.centrality_k`       | No       | `50`                       | Sample size $k$ for betweenness sampling ($k \le N$).         |
+| `data.centrality_percentile`| No     | `98.0`                     | Sparsification percentile threshold for large graphs ($N > 500$). |
+| `data.centrality_weight_mode`| No    | `none`                     | Weight mode for shortest paths (`none` BFS, `distance` $1/w$, `raw` $w$). |
 | `model.hidden_dim`        | No       | `64`                       | Hidden dimension for neural message-passing layers.           |
 | `model.learning_rate`     | No       | `0.005`                    | Learning rate for gradient optimization.                      |
 | `model.epochs`            | No       | `50`                       | Maximum training epochs per model.                            |

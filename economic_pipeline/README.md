@@ -72,7 +72,10 @@ data:
   test_year: 2019
   raw_monetary_scaling: 1000.0
   edge_threshold: 1.0
-  centrality_strategy: "fast"   # Options: "fast" (default, ~9s/snap) or "exact_networkx"
+  centrality_strategy: "fast"       # Options: "fast", "unweighted", "distance_inverted", "exact_networkx"
+  centrality_k: 50                   # Sample size k for betweenness centrality (default: 50)
+  centrality_percentile: 98.0        # Sparsification threshold percentile for graphs N > 500
+  centrality_weight_mode: "none"     # Options: "none" (unweighted/BFS), "distance" (1/w), "raw" (w)
 
 model:
   hidden_dim: 64
@@ -94,8 +97,10 @@ logging:
 
 The framework uses the **Strategy Pattern** for topological feature extraction:
 
-1. **`fast`** *(Default)*: Uses NumPy BLAS power iteration for eigenvector centrality and sampled sparse betweenness centrality ($k=50$). Dataset snapshot generation takes $\sim 4.2$ minutes for all 28 years.
-2. **`exact_networkx`**: Uses full NetworkX shortest-path betweenness (`nx.betweenness_centrality`) and eigenvector centrality (`nx.eigenvector_centrality`).
+1. **`fast`** *(Default)*: Uses NumPy BLAS power iteration for eigenvector centrality and configurable sampled sparse betweenness centrality. Avoids Dijkstra path explosions by defaulting to unweighted BFS shortest paths (`centrality_weight_mode: "none"`).
+2. **`unweighted`**: Explicit unweighted BFS sampled betweenness + power iteration eigenvector centrality.
+3. **`distance_inverted`**: Transforms trade weights to physical distances ($d_{ij} = \frac{1.0}{w_{ij} + 1e-6}$) before shortest path calculation.
+4. **`exact_networkx`**: Full exact NetworkX shortest-path betweenness (`nx.betweenness_centrality`) and eigenvector centrality (`nx.eigenvector_centrality`).
 
 ### Initializing Configuration
 

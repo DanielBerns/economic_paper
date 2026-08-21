@@ -8,7 +8,10 @@ app:
   quicktest: false
   verbose: true
 data:
+  centrality_k: 50
+  centrality_percentile: 98.0
   centrality_strategy: fast
+  centrality_weight_mode: none
   edge_threshold: 1.0
   end_year: 2022
   num_countries: 80

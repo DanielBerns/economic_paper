@@ -123,14 +123,18 @@ class ICIODatasetLoader:
 
                 self.logger.info(
                     f"Year {year}: computing topological centralities (strategy='{self.config.data.centrality_strategy}', "
-                    f"edge_threshold={self.config.data.edge_threshold})..."
+                    f"weight_mode='{self.config.data.centrality_weight_mode}', k={self.config.data.centrality_k}, "
+                    f"percentile={self.config.data.centrality_percentile}, edge_threshold={self.config.data.edge_threshold})..."
                 )
                 cent_start = time.time()
                 try:
                     centralities_t = compute_topological_centralities(
                         Z_t,
-                        self.config.data.edge_threshold,
+                        threshold=self.config.data.edge_threshold,
                         strategy=self.config.data.centrality_strategy,
+                        k=self.config.data.centrality_k,
+                        percentile=self.config.data.centrality_percentile,
+                        weight_mode=self.config.data.centrality_weight_mode,
                     )
                 except Exception as ce:
                     self.logger.exception(f"Year {year}: Failed to compute topological centralities: {ce}")

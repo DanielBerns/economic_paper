@@ -36,8 +36,8 @@ def main(args_list=None):
     )
     parser.add_argument(
         "--centrality-strategy",
-        choices=["fast", "exact_networkx"],
-        help="Select topological centrality computation strategy ('fast' BLAS power-iteration or 'exact_networkx')",
+        choices=["fast", "unweighted", "distance_inverted", "exact_networkx"],
+        help="Select topological centrality strategy ('fast', 'unweighted', 'distance_inverted', 'exact_networkx')",
     )
     parser.add_argument(
         "--run", action="store_true", help="Execute the complete empirical pipeline"

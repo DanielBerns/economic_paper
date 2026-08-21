@@ -15,13 +15,22 @@ class CentralityStrategy(ABC):
         W_share: np.ndarray,
         in_strength: np.ndarray,
         out_strength: np.ndarray,
+        k: int = 50,
+        percentile: float = 98.0,
+        weight_mode: str = "none",
     ) -> tuple[np.ndarray, np.ndarray]:
         """Compute and return (betweenness, eigenvector) centralities."""
         pass
 
 
 class FastCentralityStrategy(CentralityStrategy):
-    """Optimized Strategy: Vectorized power iteration eigenvector centrality + sampled sparse betweenness."""
+    """Optimized Strategy: Vectorized power iteration eigenvector centrality + sampled sparse betweenness.
+    
+    Supports weight_mode:
+      - 'none' (default): Unweighted BFS sampled betweenness (fastest, avoids Dijkstra path explosions)
+      - 'distance': Inverse-weight physical distance Dijkstra sampled betweenness (1/w)
+      - 'raw': Direct-weight Dijkstra sampled betweenness
+    """
 
     def compute(
         self,
@@ -29,6 +38,9 @@ class FastCentralityStrategy(CentralityStrategy):
         W_share: np.ndarray,
         in_strength: np.ndarray,
         out_strength: np.ndarray,
+        k: int = 50,
+        percentile: float = 98.0,
+        weight_mode: str = "none",
     ) -> tuple[np.ndarray, np.ndarray]:
         N = Z.shape[0]
 
@@ -50,23 +62,72 @@ class FastCentralityStrategy(CentralityStrategy):
 
         # Fast sampled betweenness centrality on thresholded graph
         try:
+            sample_k = min(N, k)
             if N > 500:
-                thresh = max(1e-4, float(np.percentile(W_share, 98)))
+                thresh = max(1e-4, float(np.percentile(W_share, percentile)))
                 W_sparse = np.where(W_share >= thresh, W_share, 0.0)
-                G_sparse = nx.from_numpy_array(W_sparse, create_using=nx.DiGraph)
-                betweenness_dict = nx.betweenness_centrality(
-                    G_sparse, k=min(N, 50), weight="weight", seed=42
-                )
             else:
-                G = nx.from_numpy_array(W_share, create_using=nx.DiGraph)
-                betweenness_dict = nx.betweenness_centrality(
-                    G, k=min(N, 50), weight="weight", seed=42
-                )
+                W_sparse = W_share.copy()
+
+            mode = weight_mode.lower().strip() if isinstance(weight_mode, str) else "none"
+            if mode == "distance":
+                # Convert share weights to physical distance metrics: d_ij = 1.0 / (w_ij + 1e-6)
+                with np.errstate(divide="ignore"):
+                    W_graph = np.where(W_sparse > 0, 1.0 / (W_sparse + 1e-6), 0.0)
+                nx_weight: str | None = "weight"
+            elif mode == "raw":
+                W_graph = W_sparse
+                nx_weight = "weight"
+            else:
+                # Default 'none': unweighted BFS shortest paths for maximum performance
+                W_graph = W_sparse
+                nx_weight = None
+
+            G_sparse = nx.from_numpy_array(W_graph, create_using=nx.DiGraph)
+            betweenness_dict = nx.betweenness_centrality(
+                G_sparse, k=sample_k, weight=nx_weight, seed=42
+            )
             betweenness = np.array([betweenness_dict.get(i, 0.0) for i in range(N)])
         except Exception:
             betweenness = (in_strength * out_strength) / (N * (in_strength.sum() + 1e-6))
 
         return betweenness, eigenvector
+
+
+class FastUnweightedCentralityStrategy(FastCentralityStrategy):
+    """Concrete Strategy: Unweighted BFS sampled betweenness + power iteration eigenvector centrality."""
+
+    def compute(
+        self,
+        Z: np.ndarray,
+        W_share: np.ndarray,
+        in_strength: np.ndarray,
+        out_strength: np.ndarray,
+        k: int = 50,
+        percentile: float = 98.0,
+        weight_mode: str = "none",
+    ) -> tuple[np.ndarray, np.ndarray]:
+        return super().compute(
+            Z, W_share, in_strength, out_strength, k=k, percentile=percentile, weight_mode="none"
+        )
+
+
+class DistanceInvertedCentralityStrategy(FastCentralityStrategy):
+    """Concrete Strategy: Distance-inverted (1/w) weighted shortest path sampled betweenness."""
+
+    def compute(
+        self,
+        Z: np.ndarray,
+        W_share: np.ndarray,
+        in_strength: np.ndarray,
+        out_strength: np.ndarray,
+        k: int = 50,
+        percentile: float = 98.0,
+        weight_mode: str = "distance",
+    ) -> tuple[np.ndarray, np.ndarray]:
+        return super().compute(
+            Z, W_share, in_strength, out_strength, k=k, percentile=percentile, weight_mode="distance"
+        )
 
 
 class ExactNetworkXCentralityStrategy(CentralityStrategy):
@@ -78,12 +139,27 @@ class ExactNetworkXCentralityStrategy(CentralityStrategy):
         W_share: np.ndarray,
         in_strength: np.ndarray,
         out_strength: np.ndarray,
+        k: int = 50,
+        percentile: float = 98.0,
+        weight_mode: str = "none",
     ) -> tuple[np.ndarray, np.ndarray]:
         N = Z.shape[0]
-        G = nx.from_numpy_array(W_share, create_using=nx.DiGraph)
+        mode = weight_mode.lower().strip() if isinstance(weight_mode, str) else "none"
+        if mode == "distance":
+            with np.errstate(divide="ignore"):
+                W_graph = np.where(W_share > 0, 1.0 / (W_share + 1e-6), 0.0)
+            nx_weight: str | None = "weight"
+        elif mode == "raw":
+            W_graph = W_share
+            nx_weight = "weight"
+        else:
+            W_graph = W_share
+            nx_weight = None
+
+        G = nx.from_numpy_array(W_graph, create_using=nx.DiGraph)
 
         try:
-            betweenness_dict = nx.betweenness_centrality(G, weight="weight")
+            betweenness_dict = nx.betweenness_centrality(G, weight=nx_weight)
             betweenness = np.array([betweenness_dict.get(i, 0.0) for i in range(N)])
         except Exception:
             betweenness = np.zeros(N)
@@ -107,6 +183,10 @@ def get_centrality_strategy(
         strat_key = strategy.lower().strip()
         if strat_key in ("fast", "vectorized", "sampled"):
             return FastCentralityStrategy()
+        elif strat_key in ("unweighted", "bfs", "fast_unweighted"):
+            return FastUnweightedCentralityStrategy()
+        elif strat_key in ("distance_inverted", "inverted", "distance"):
+            return DistanceInvertedCentralityStrategy()
         elif strat_key in ("exact_networkx", "networkx", "exact", "original"):
             return ExactNetworkXCentralityStrategy()
     return FastCentralityStrategy()
@@ -116,6 +196,9 @@ def compute_topological_centralities(
     Z: np.ndarray,
     threshold: float = 1.0,
     strategy: Union[str, CentralityStrategy] = "fast",
+    k: int = 50,
+    percentile: float = 98.0,
+    weight_mode: str = "none",
 ) -> dict[str, np.ndarray]:
     """Compute in/out degrees, strengths, betweenness, eigenvector centralities, and Herfindahl index using Strategy pattern."""
     N = Z.shape[0]
@@ -135,7 +218,9 @@ def compute_topological_centralities(
 
     # Compute betweenness and eigenvector via Strategy Pattern
     strat_obj = get_centrality_strategy(strategy)
-    betweenness, eigenvector = strat_obj.compute(Z, W_share, in_strength, out_strength)
+    betweenness, eigenvector = strat_obj.compute(
+        Z, W_share, in_strength, out_strength, k=k, percentile=percentile, weight_mode=weight_mode
+    )
 
     return {
         "in_degree": in_degree,
